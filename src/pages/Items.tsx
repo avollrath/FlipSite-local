@@ -47,6 +47,7 @@ import {
   type SortKey,
   type SortState,
 } from "@/components/items/itemListModel";
+import { downloadItemCsv } from "@/components/items/itemCsvExport";
 import type { Item, ItemStatus } from "@/types";
 
 type DrawerState =
@@ -61,8 +62,6 @@ const galleryThumbnailSize = 420;
 const galleryGap = 12;
 const listThumbnailSize = 80;
 const bundleChildAccountingNote = "Included in bundle parent";
-const bundleChildExportNote =
-  "Revenue detail; profit and ROI are included in bundle parent";
 const tableColumns: Array<{ key: SortKey | "actions"; label: string }> = [
   { key: "name", label: "Name" },
   { key: "category", label: "Category" },
@@ -372,36 +371,7 @@ export function Items() {
   }
 
   function exportVisibleItems() {
-    const rows = displayedItems.map((item) => {
-      const isKeeper = isKeepingItem(item);
-      const isBundleChild = Boolean(item.bundle_id && !item.is_bundle_parent);
-      const profit = calculateItemProfit(item, items);
-      const roi = calculateItemROI(item, items);
-
-      return {
-        "Record Type": isBundleChild
-          ? "Bundle child"
-          : item.is_bundle_parent
-            ? "Bundle parent"
-            : "Standalone",
-        Name: item.name,
-        Category: item.category,
-        Condition: item.condition,
-        "Buy Price": item.buy_price,
-        "Sell Price": isKeeper ? "" : calculateItemSellValue(item, items),
-        Profit: isKeeper ? "" : (profit ?? ""),
-        "ROI %": isKeeper || roi === null ? "" : roi.toFixed(2),
-        "Bought from": getBuyPlatform(item),
-        "Sold on": getSellPlatform(item),
-        Status: getStatusLabel(getEffectiveItemStatus(item, items)),
-        "Date Bought": formatDate(item.bought_at),
-        "Date Sold": formatDate(item.sold_at),
-        "Accounting Note": isBundleChild ? bundleChildExportNote : "",
-        Notes: item.notes ?? "",
-      };
-    });
-
-    downloadCsv(rows, "flipsite-items.csv");
+    downloadItemCsv(displayedItems, items);
   }
 
   const emptyAllItems = !isLoading && items.length === 0;
@@ -1389,35 +1359,6 @@ function getGalleryCardSize() {
   }
 
   return 200;
-}
-
-function downloadCsv(
-  rows: Array<Record<string, string | number>>,
-  fileName: string,
-) {
-  if (rows.length === 0) {
-    return;
-  }
-
-  const headers = Object.keys(rows[0]);
-  const csv = [
-    headers.join(","),
-    ...rows.map((row) =>
-      headers.map((header) => csvEscape(row[header])).join(","),
-    ),
-  ].join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
-function csvEscape(value: string | number) {
-  const text = String(value);
-  return `"${text.replaceAll('"', '""')}"`;
 }
 
 const controlClassName =
