@@ -1126,6 +1126,12 @@ function GalleryCard({
             Bundle
           </span>
         </div>
+      ) : item.bundle_id ? (
+        <div className="absolute left-2 top-2">
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-sm">
+            <Link2 className="h-3 w-3" aria-hidden="true" />
+          </span>
+        </div>
       ) : null}
       <div className="absolute right-2 top-2">
         <span className="rounded-full border border-white/20 bg-black/40 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
