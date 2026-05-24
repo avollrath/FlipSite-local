@@ -34,7 +34,10 @@ export function Layout() {
       <div className={`flex-1 min-h-screen overflow-auto transition-all duration-200 ease-out ${sidebarWidth}`}>
         <header className="sticky top-0 z-30 border-b border-subtle bg-surface/85 backdrop-blur">
           <div className="h-16 px-5 md:px-8">
-            <div className="flex h-full max-w-[2108px] items-center justify-between md:max-w-[2308px] xl:max-w-[2508px]">
+            <div
+              className="flex h-full items-center justify-between"
+              style={{ maxWidth: "var(--items-gallery-width, 100%)" }}
+            >
               <div aria-hidden="true" />
               <button
                 type="button"

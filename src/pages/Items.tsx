@@ -14,7 +14,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useSearchParams } from "react-router-dom";
 import { ImageWithSkeleton } from "@/components/ui/ImageWithSkeleton";
@@ -70,6 +70,7 @@ type ViewMode = "list" | "gallery";
 
 const allStatuses = ["all", "holding", "listed", "sold", "keeper"] as const;
 const galleryThumbnailSize = 420;
+const galleryGap = 12;
 const listThumbnailSize = 80;
 const tableColumns: Array<{ key: SortKey | "actions"; label: string }> = [
   { key: "name", label: "Name" },
@@ -105,6 +106,7 @@ const gallerySortOptions: Array<{ key: SortKey; label: string }> = [
 export function Items() {
   const { data: items = [], isLoading } = useItems();
   const deleteItem = useDeleteItem();
+  const pageRef = useRef<HTMLElement | null>(null);
   const { itemId } = useParams();
   const [searchParams] = useSearchParams();
   const queryStatus = getQueryStatus(searchParams.get("status"));
@@ -137,6 +139,11 @@ export function Items() {
     mode: "add",
     item: null,
   });
+  const [galleryLayout, setGalleryLayout] = useState(() => ({
+    cardSize: 200,
+    columns: 1,
+    width: 200,
+  }));
   const [deleteTarget, setDeleteTarget] = useState<Item | null>(null);
 
   const buyPlatforms = useMemo(
@@ -331,6 +338,56 @@ export function Items() {
     localStorage.setItem("flipsite-items-view", viewMode);
   }, [viewMode]);
 
+  useEffect(() => {
+    if (viewMode !== "gallery") {
+      document.documentElement.style.removeProperty("--items-gallery-width");
+      return;
+    }
+
+    function updateGalleryLayout() {
+      const availableWidth = pageRef.current?.clientWidth ?? 0;
+
+      if (!availableWidth) {
+        return;
+      }
+
+      const cardSize = getGalleryCardSize();
+      const columns = Math.max(
+        1,
+        Math.floor((availableWidth + galleryGap) / (cardSize + galleryGap)),
+      );
+      const width = columns * cardSize + (columns - 1) * galleryGap;
+
+      setGalleryLayout((currentLayout) =>
+        currentLayout.cardSize === cardSize &&
+        currentLayout.columns === columns &&
+        currentLayout.width === width
+          ? currentLayout
+          : { cardSize, columns, width },
+      );
+      document.documentElement.style.setProperty(
+        "--items-gallery-width",
+        `${width}px`,
+      );
+    }
+
+    updateGalleryLayout();
+
+    const resizeObserver = new ResizeObserver(updateGalleryLayout);
+
+    if (pageRef.current) {
+      resizeObserver.observe(pageRef.current);
+    }
+
+    window.addEventListener("resize", updateGalleryLayout);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updateGalleryLayout);
+      document.documentElement.style.removeProperty("--items-gallery-width");
+    };
+  }, [viewMode]);
+
   function openAddDrawer() {
     setDrawer({ open: true, mode: "add", item: null });
   }
@@ -429,13 +486,12 @@ export function Items() {
   const emptyAllItems = !isLoading && items.length === 0;
 
   return (
-    <section>
+    <section ref={pageRef}>
       <div
-        className={`flex flex-col gap-4 ${
-          viewMode === "gallery"
-            ? "max-w-[2108px] md:max-w-[2308px] xl:max-w-[2508px]"
-            : ""
-        }`}
+        className="flex flex-col gap-4"
+        style={
+          viewMode === "gallery" ? { maxWidth: galleryLayout.width } : undefined
+        }
       >
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div>
@@ -566,6 +622,7 @@ export function Items() {
             <GalleryView
               allItems={items}
               items={displayedItems}
+              layout={galleryLayout}
               onEdit={openEditDrawer}
               thumbnailByItemId={thumbnailByItemId}
             />
@@ -1037,20 +1094,29 @@ function GallerySortControl({
 function GalleryView({
   allItems,
   items,
+  layout,
   onEdit,
   thumbnailByItemId,
 }: {
   allItems: Item[];
   items: Item[];
+  layout: { cardSize: number; columns: number; width: number };
   onEdit: (item: Item) => void;
   thumbnailByItemId: Map<string, ItemImageThumbnail>;
 }) {
   return (
-    <div className="mt-6 grid max-w-[2108px] grid-cols-[repeat(auto-fill,200px)] justify-start gap-3 md:max-w-[2308px] md:grid-cols-[repeat(auto-fill,220px)] xl:max-w-[2508px] xl:grid-cols-[repeat(auto-fill,240px)]">
+    <div
+      className="mt-6 grid justify-start gap-3"
+      style={{
+        gridTemplateColumns: `repeat(${layout.columns}, ${layout.cardSize}px)`,
+        width: layout.width,
+      }}
+    >
       {items.map((item, index) => (
         <GalleryCard
           key={item.tsid}
           allItems={allItems}
+          cardSize={layout.cardSize}
           item={item}
           index={index}
           onEdit={() => onEdit(item)}
@@ -1063,12 +1129,14 @@ function GalleryView({
 
 function GalleryCard({
   allItems,
+  cardSize,
   item,
   index,
   onEdit,
   thumbnail,
 }: {
   allItems: Item[];
+  cardSize: number;
   item: Item;
   index: number;
   onEdit: () => void;
@@ -1083,8 +1151,11 @@ function GalleryCard({
   return (
     <button
       type="button"
-      style={{ animationDelay: `${Math.min(index * 40, 400)}ms` }}
-      className="group relative aspect-square w-[200px] overflow-hidden rounded-lg bg-surface-2/70 text-left opacity-0 shadow-sm transition hover:shadow-md animate-fadeIn md:w-[220px] xl:w-[240px]"
+      style={{
+        animationDelay: `${Math.min(index * 40, 400)}ms`,
+        width: cardSize,
+      }}
+      className="group relative aspect-square overflow-hidden rounded-lg bg-surface-2/70 text-left opacity-0 shadow-sm transition hover:shadow-md animate-fadeIn"
       onClick={onEdit}
     >
       <ImageWithSkeleton
@@ -1396,6 +1467,18 @@ function getInitialViewMode(): ViewMode {
   return localStorage.getItem("flipsite-items-view") === "gallery"
     ? "gallery"
     : "list";
+}
+
+function getGalleryCardSize() {
+  if (window.innerWidth >= 1280) {
+    return 240;
+  }
+
+  if (window.innerWidth >= 768) {
+    return 220;
+  }
+
+  return 200;
 }
 
 function downloadCsv(
