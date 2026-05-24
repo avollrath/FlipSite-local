@@ -1,9 +1,6 @@
 import {
  CircleCheck,
- Info,
- Link2,
  Loader2,
- Plus,
  Trash2,
 } from 'lucide-react'
 import {
@@ -12,14 +9,22 @@ import {
  useRef,
  useState,
  type FormEvent,
- type KeyboardEvent,
- type ReactNode,
 } from 'react'
 import { toast } from 'sonner'
 import {
  ExistingFilesSection,
  PendingFilesSection,
 } from '@/components/items/ItemFileSections'
+import {
+ Field,
+ SuggestionCombobox,
+ itemInputClassName as inputClassName,
+} from '@/components/items/ItemFormControls'
+import {
+ BundleEditor,
+ ParentBundleInfoBox,
+ type BundleChildForm,
+} from '@/components/items/BundleEditor'
 import {
  Sheet,
  SheetContent,
@@ -82,16 +87,6 @@ type FormState = {
  bought_at: string
  sold_at: string
  notes: string
-}
-
-type BundleChildForm = {
- id: string
- tsid?: string
- name: string
- condition: string
- category: string
- status: ItemStatus
- buy_price: string
 }
 
 type NormalizedBundleChild = Omit<NewBundleChild, 'buy_price'> & {
@@ -658,7 +653,7 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
   )}
 
   {!isBundleChild && isBundle ? (
-  <BundleItemsSection
+  <BundleEditor
    categoryOptions={categories}
    childrenForms={bundleChildren}
    conditionOptions={conditionOptions}
@@ -761,301 +756,6 @@ function getPreviewProfit({
  return calcProfit(buyPrice, sellPrice)
 }
 
-function ParentBundleInfoBox({
- isLoading,
- onOpenParent,
- parentBundle,
-}: {
- isLoading: boolean
- onOpenParent?: () => void
- parentBundle: Item | null | undefined
-}) {
- const label = isLoading
- ? 'Loading bundle info...'
- : parentBundle?.name ?? 'Unknown bundle'
-
- return (
- <section className="flex items-start gap-3 rounded-lg border border-border-base bg-surface-2/60 p-4">
-  <Info className="mt-0.5 h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
-  <div>
-  <p className="text-sm font-semibold text-base ">
-   This item is part of a bundle:
-  </p>
-  {parentBundle && onOpenParent ? (
-   <button
-   type="button"
-   className="mt-1 inline-flex items-center gap-1 text-left text-sm font-semibold text-accent transition hover:text-accent/80"
-   onClick={onOpenParent}
-   >
-   <Link2 className="h-4 w-4" aria-hidden="true" />
-   {parentBundle.name}
-   </button>
-  ) : (
-   <p className="mt-1 text-sm text-muted ">{label}</p>
-  )}
-  </div>
- </section>
- )
-}
-
-function BundleItemsSection({
- categoryOptions,
- childrenForms,
- conditionOptions,
- onAdd,
- onRemove,
- onUpdate,
-}: {
- categoryOptions: string[]
- childrenForms: BundleChildForm[]
- conditionOptions: string[]
- onAdd: () => void
- onRemove: (id: string) => void
- onUpdate: <K extends keyof BundleChildForm>(
- id: string,
- key: K,
- value: BundleChildForm[K],
- ) => void
-}) {
- return (
- <section className="rounded-lg border border-accent/30 bg-accent/10 p-4">
- <div className="flex items-center justify-between gap-3">
-  <div>
-  <h3 className="text-sm font-semibold text-base ">
-  Bundle Items
-  </h3>
-  <p className="mt-1 text-sm text-muted ">
-  Child items inherit bought-from platform and date bought from the parent.
-  </p>
-  </div>
-  <button
-  type="button"
-  className="inline-flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-fg transition hover:bg-accent/90"
-  onClick={onAdd}
-  >
-  <Plus className="h-4 w-4" aria-hidden="true" />
-  Add
-  </button>
- </div>
-
- <div className="mt-4 space-y-3">
-  {childrenForms.map((child) => (
-  <div
-  key={child.id}
-  className="rounded-lg bg-surface-2/40 p-3"
-  >
-  <div className="mb-3 flex items-center justify-between gap-3">
-   <div className="flex items-center gap-2 text-sm font-medium text-base ">
-   <Link2 className="h-4 w-4 text-accent" aria-hidden="true" />
-   {child.tsid ? 'Bundle child' : 'New child item'}
-   </div>
-   {!child.tsid ? (
-   <button
-   type="button"
-   className="rounded-lg p-2 text-muted transition hover:bg-negative/10 hover:text-negative"
-   onClick={() => onRemove(child.id)}
-   aria-label="Remove child item"
-   >
-   <Trash2 className="h-4 w-4" aria-hidden="true" />
-   </button>
-   ) : null}
-  </div>
-  <div className="grid gap-3 sm:grid-cols-2">
-   <input
-   className={inputClassName}
-   value={child.name}
-   onChange={(event) =>
-   onUpdate(child.id, 'name', event.target.value)
-   }
-   placeholder="Name"
-   />
-   <SuggestionCombobox
-   label="Child category"
-   options={categoryOptions}
-   value={child.category}
-   onChange={(value) => onUpdate(child.id, 'category', value)}
-   placeholder="Category"
-   />
-   <select
-   className={inputClassName + ' pr-10'}
-   value={child.condition}
-   onChange={(event) =>
-   onUpdate(child.id, 'condition', event.target.value)
-   }
-   >
-   {conditionOptions.map((condition) => (
-   <option key={condition} value={condition}>
-    {condition}
-   </option>
-   ))}
-   </select>
-   <select
-   className={inputClassName + ' pr-10'}
-   value={child.status}
-   onChange={(event) =>
-   onUpdate(child.id, 'status', event.target.value as ItemStatus)
-   }
-   >
-   {statuses.map((status) => (
-   <option key={status} value={status}>
-    {getStatusLabel(status)}
-   </option>
-   ))}
-   </select>
-   <input
-   className={inputClassName}
-   type="text"
-   inputMode="decimal"
-   value={child.buy_price}
-   onChange={(event) =>
-   onUpdate(child.id, 'buy_price', event.target.value)
-   }
-   placeholder="0,00 €"
-   />
-  </div>
-  </div>
-  ))}
- </div>
- </section>
- )
-}
-
-function SuggestionCombobox({
- label,
- onChange,
- options,
- placeholder,
- value,
-}: {
- label: string
- onChange: (value: string) => void
- options: string[]
- placeholder: string
- value: string
-}) {
- const containerRef = useRef<HTMLDivElement | null>(null)
- const [open, setOpen] = useState(false)
- const [highlightedIndex, setHighlightedIndex] = useState(0)
- const filteredOptions = options.filter((option) => optionMatches(option, value))
- const exactMatch = options.some(
- (option) => option.toLowerCase() === value.trim().toLowerCase(),
- )
- const showCustomOption = Boolean(value.trim() && !exactMatch)
- const visibleOptions = showCustomOption
- ? [`Use "${value.trim()}"`, ...filteredOptions]
- : filteredOptions
-
- useEffect(() => {
- if (!open) {
- return
- }
-
- function handlePointerDown(event: MouseEvent) {
- if (!containerRef.current?.contains(event.target as Node)) {
-  setOpen(false)
- }
- }
-
- document.addEventListener('mousedown', handlePointerDown)
-
- return () => {
- document.removeEventListener('mousedown', handlePointerDown)
- }
- }, [open])
-
- function selectOption(option: string) {
- if (showCustomOption && option === visibleOptions[0]) {
- onChange(value.trim())
- } else {
- onChange(option)
- }
-
- setOpen(false)
- }
-
- function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
- if (event.key === 'ArrowDown') {
- event.preventDefault()
- setOpen(true)
- setHighlightedIndex((currentIndex) =>
-  Math.min(currentIndex + 1, Math.max(visibleOptions.length - 1, 0)),
- )
- return
- }
-
- if (event.key === 'ArrowUp') {
- event.preventDefault()
- setOpen(true)
- setHighlightedIndex((currentIndex) => Math.max(currentIndex - 1, 0))
- return
- }
-
- if (event.key === 'Enter' && open && visibleOptions[highlightedIndex]) {
- event.preventDefault()
- selectOption(visibleOptions[highlightedIndex])
- return
- }
-
- if (event.key === 'Escape') {
- setOpen(false)
- }
- }
-
- return (
- <div ref={containerRef} className="relative">
- <input
-  className={inputClassName}
-  value={value}
-  onChange={(event) => {
-  onChange(event.target.value)
-  setHighlightedIndex(0)
-  setOpen(true)
-  }}
-  onFocus={() => {
-  setHighlightedIndex(0)
-  setOpen(true)
-  }}
-  onClick={() => {
-  setHighlightedIndex(0)
-  setOpen(true)
-  }}
-  onKeyDown={handleKeyDown}
-  placeholder={placeholder}
-  role="combobox"
-  aria-autocomplete="list"
-  aria-expanded={open}
-  aria-label={label}
- />
- {open ? (
-  <div className="absolute z-50 mt-1 max-h-56 w-full overflow-auto rounded-lg bg-card p-1 shadow-xl">
-  {visibleOptions.length === 0 ? (
-  <div className="px-3 py-2 text-sm text-muted ">
-   No suggestions yet.
-  </div>
-  ) : (
-  visibleOptions.map((option, index) => (
-   <button
-   key={`${option}-${index}`}
-   type="button"
-   className={`block w-full rounded-md px-3 py-2 text-left text-sm transition ${
-   highlightedIndex === index
-    ? 'bg-accent-soft text-accent bg-accent/15 '
-    : 'text-base hover:bg-surface-2'
-   }`}
-   onMouseEnter={() => setHighlightedIndex(index)}
-   onMouseDown={(event) => event.preventDefault()}
-   onClick={() => selectOption(option)}
-   >
-   {option}
-   </button>
-  ))
-  )}
-  </div>
- ) : null}
- </div>
- )
-}
-
 function DeletePanel({
  confirming,
  deleting,
@@ -1111,26 +811,6 @@ function DeletePanel({
   </button>
  )}
  </div>
- )
-}
-
-function Field({
- children,
- label,
- required,
-}: {
- children: ReactNode
- label: string
- required?: boolean
-}) {
- return (
- <label className="block">
- <span className="text-sm font-medium text-base ">
-  {label}
-  {required ? <span className="text-accent"> *</span> : null}
- </span>
- <span className="mt-2 block">{children}</span>
- </label>
  )
 }
 
@@ -1222,20 +902,6 @@ function uniqueValues(values: string[]) {
  )
 }
 
-function optionMatches(option: string, query: string) {
- const normalizedOption = option.toLowerCase()
- const normalizedQuery = query.trim().toLowerCase()
-
- if (!normalizedQuery) {
- return true
- }
-
- return normalizedOption.includes(normalizedQuery)
-}
-
 function getErrorMessage(error: unknown, fallback: string) {
  return error instanceof Error ? error.message : fallback
 }
-
-const inputClassName =
- 'w-full rounded-lg border border-border-base bg-card px-3 py-2.5 text-sm text-base outline-none transition placeholder:text-muted focus:border-accent focus:ring-4 focus:ring-accent/10 '
