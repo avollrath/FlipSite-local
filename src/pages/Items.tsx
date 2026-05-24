@@ -1113,7 +1113,8 @@ function GalleryCard({
       />
       {item.is_bundle_parent ? (
         <div className="absolute left-2 top-2">
-          <span className="rounded-full border border-white/20 bg-black/40 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+          <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/40 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+            <Link2 className="h-3 w-3" aria-hidden="true" />
             Bundle
           </span>
         </div>
