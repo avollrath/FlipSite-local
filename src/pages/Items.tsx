@@ -1065,7 +1065,7 @@ function GalleryView({
   thumbnailByItemId: Map<string, ItemImageThumbnail>;
 }) {
   return (
-    <div className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),240px))] justify-center gap-3">
+    <div className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(180px,240px))] justify-start gap-3 max-[420px]:grid-cols-[repeat(auto-fill,minmax(0,1fr))]">
       {items.map((item, index) => (
         <GalleryCard
           key={item.tsid}
