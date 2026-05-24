@@ -18,6 +18,12 @@ import {
  type BundleChildForm,
 } from '@/components/items/BundleEditor'
 import {
+ buildBundleChildSavePlan,
+ createEmptyBundleChild,
+ getInitialBundleChildren,
+ normalizeBundleChildren,
+} from '@/components/items/bundleChildMapping'
+import {
  ItemDetailsForm,
  type ItemFormState as FormState,
 } from '@/components/items/ItemDetailsForm'
@@ -35,15 +41,13 @@ import {
  useDeleteItem,
  useItems,
  useUpdateItem,
- type ItemUpdate,
- type NewBundleChild,
  type NewItem,
 } from '@/hooks/useItems'
 import { useDemoGuard } from '@/hooks/useDemoGuard'
 import {
  uploadItemFile,
 } from '@/lib/itemFiles'
-import { itemConditions, normalizeItemCondition } from '@/lib/conditions'
+import { itemConditions } from '@/lib/conditions'
 import {
  formatTodayDateInputValue,
 } from '@/lib/dateInput'
@@ -71,12 +75,6 @@ type ItemDrawerProps = {
 }
 
 type DrawerFormProps = ItemDrawerProps
-
-type NormalizedBundleChild = Omit<NewBundleChild, 'buy_price'> & {
- buy_price: number
- localId: string
- tsid?: string
-}
 
 export function ItemDrawer(props: ItemDrawerProps) {
  const { open, onOpenChange, mode, item } = props
@@ -244,7 +242,7 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
  } else if (isBundle) {
   const createdItem = await addBundle.mutateAsync({
   parent: payload,
-  children: normalizeBundleChildren(),
+  children: normalizeBundleChildren(bundleChildren),
   })
   await uploadPendingFiles(createdItem.tsid)
  } else {
@@ -284,70 +282,22 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
  }
 
  async function saveEditedBundleChildren(parentTsid: string, parent: NewItem) {
- const children = bundleChildren
- .map((child) => normalizeBundleChild(child))
- .filter((child): child is NormalizedBundleChild => child !== null)
+ const plan = buildBundleChildSavePlan({
+ children: bundleChildren,
+ parent,
+ parentTsid,
+ })
 
- for (const child of children) {
- const updates: ItemUpdate = {
-  buy_price: child.buy_price ?? 0,
-  category: child.category,
-  condition: normalizeItemCondition(child.condition),
-  name: child.name,
-  status: child.status,
- }
-
- if (child.tsid) {
+ for (const child of plan.updates) {
   await updateItem.mutateAsync({
   tsid: child.tsid,
-  updates,
+  updates: child.updates,
   syncBundleParent: false,
   })
- } else {
-  const newChild = toNewBundleChild(child)
-  await addItem.mutateAsync({
-  ...newChild,
-  buy_price: newChild.buy_price ?? 0,
-  bundle_id: parentTsid,
-  bought_at: parent.bought_at,
-  is_bundle_parent: false,
-  buy_platform: parent.buy_platform ?? null,
-  sell_platform: null,
-  sell_price: null,
-  sold_at: null,
-  notes: null,
-  })
- }
- }
  }
 
- function normalizeBundleChildren() {
- return bundleChildren
- .map((child) => normalizeBundleChild(child))
- .filter((child): child is NormalizedBundleChild => child !== null)
- .map(toNewBundleChild)
- }
-
- function normalizeBundleChild(
- child: BundleChildForm,
- ): NormalizedBundleChild | null {
- const name = child.name.trim()
-
- if (!name) {
- return null
- }
-
- const splitCost = parseMoneyInput(child.buy_price)
-
- return {
- localId: child.id,
- tsid: child.tsid,
- name,
- category: child.category.trim(),
- condition: normalizeItemCondition(child.condition),
- status: child.status,
- buy_price: splitCost ?? 0,
- notes: null,
+ for (const child of plan.creates) {
+  await addItem.mutateAsync(child)
  }
  }
 
@@ -576,49 +526,6 @@ function DeletePanel({
  )}
  </div>
  )
-}
-
-function getInitialBundleChildren(
- item: Item | null | undefined,
- items: Item[],
-): BundleChildForm[] {
- if (!item?.is_bundle_parent) {
- return []
- }
-
- return items
- .filter((child) => child.bundle_id === item.tsid)
- .map((child) => ({
- id: child.tsid,
- tsid: child.tsid,
- name: child.name,
- category: child.category,
- condition: normalizeItemCondition(child.condition),
- status: child.status,
- buy_price: child.buy_price > 0 ? String(child.buy_price) : '',
- }))
-}
-
-function createEmptyBundleChild(): BundleChildForm {
- return {
- id: crypto.randomUUID(),
- name: '',
- category: '',
- condition: 'Good',
- status: 'holding',
- buy_price: '',
- }
-}
-
-function toNewBundleChild(child: NormalizedBundleChild): NewBundleChild {
- return {
- buy_price: child.buy_price,
- category: child.category,
- condition: child.condition,
- name: child.name,
- notes: child.notes,
- status: child.status,
- }
 }
 
 function uniqueValues(values: string[]) {
