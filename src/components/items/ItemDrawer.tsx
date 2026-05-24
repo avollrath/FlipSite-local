@@ -45,9 +45,7 @@ import {
 } from '@/lib/itemFiles'
 import { itemConditions, normalizeItemCondition } from '@/lib/conditions'
 import {
- formatDateInputValue,
  formatTodayDateInputValue,
- toSupabaseTimestamp,
 } from '@/lib/dateInput'
 import {
  calcProfit,
@@ -57,6 +55,12 @@ import {
 } from '@/lib/utils'
 import { loadSettings } from '@/lib/settings'
 import type { Item } from '@/types'
+import {
+ buildItemPayload,
+ buildItemUpdates,
+ getInitialItemFormState,
+ shouldShowSellFields,
+} from '@/components/items/itemPayload'
 
 type ItemDrawerProps = {
  open: boolean
@@ -95,7 +99,9 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
  const updateItem = useUpdateItem()
  const deleteItem = useDeleteItem()
  const { isDemoMode, showDemoToast } = useDemoGuard()
- const [form, setForm] = useState<FormState>(() => getInitialState(item))
+ const [form, setForm] = useState<FormState>(() =>
+ getInitialItemFormState({ defaults: item ? null : loadSettings(), item }),
+ )
  const [confirmDelete, setConfirmDelete] = useState(false)
  const [isBundle, setIsBundle] = useState(Boolean(item?.is_bundle_parent))
  const [pendingFiles, setPendingFiles] = useState<File[]>([])
@@ -123,7 +129,7 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
  )
  const conditionOptions = useMemo(() => [...itemConditions], [])
 
- const showSellFields = form.status === 'sold' || form.status === 'listed'
+ const showSellFields = shouldShowSellFields(form.status)
  const isBundleChild = Boolean(item?.bundle_id)
  const parentBundle = item?.bundle_id
  ? items.find((existingItem) => existingItem.tsid === item.bundle_id)
@@ -216,70 +222,20 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
  return
  }
 
- const name = form.name.trim()
- const category = form.category.trim()
- const buyPriceValue = parseMoneyInput(form.buy_price)
- const sellPriceValue = parseMoneyInput(form.sell_price)
+ const payloadResult = buildItemPayload(form)
 
- if (!name) {
- toast.error('Name is required')
+ if (!payloadResult.ok) {
+ toast.error(payloadResult.message)
  return
  }
 
- if (buyPriceValue === null) {
- toast.error('Enter a valid buy price')
- return
- }
-
- if (!form.bought_at) {
- toast.error('Date bought is required')
- return
- }
-
- const boughtAt = toSupabaseTimestamp(form.bought_at)
- const soldAt =
- showSellFields && form.sold_at ? toSupabaseTimestamp(form.sold_at) : null
-
- if (!boughtAt) {
- toast.error('Use date format dd/MM/yyyy for date bought')
- return
- }
-
- if (showSellFields && form.sold_at && !soldAt) {
- toast.error('Use date format dd/MM/yyyy for date sold')
- return
- }
-
- if (form.status === 'sold' && sellPriceValue === null) {
- toast.error('Enter a valid sell price when an item is sold')
- return
- }
-
- const payload: NewItem = {
- name,
- category,
- condition: normalizeItemCondition(form.condition),
- buy_price: buyPriceValue,
- sell_price: showSellFields ? sellPriceValue : null,
- buy_platform: form.buy_platform.trim() || null,
- sell_platform: showSellFields ? form.sell_platform.trim() || null : null,
- status: form.status,
- bought_at: boughtAt,
- sold_at: soldAt,
- notes: form.notes.trim() || null,
- }
+ const { payload } = payloadResult
 
  try {
  if (mode === 'edit' && item) {
-  const updates: ItemUpdate = { ...payload }
-
-  if (isBundle || item.is_bundle_parent) {
-  updates.is_bundle_parent = isBundle
-  }
-
   await updateItem.mutateAsync({
   tsid: item.tsid,
-  updates,
+  updates: buildItemUpdates({ isBundle, item, payload }),
   })
 
   if (isBundle) {
@@ -620,29 +576,6 @@ function DeletePanel({
  )}
  </div>
  )
-}
-
-function getInitialState(item?: Item | null): FormState {
- const defaults = item ? null : loadSettings()
-
- return {
- name: item?.name ?? '',
- category: item?.category ?? defaults?.defaultCategory ?? '',
- condition: normalizeItemCondition(
- item?.condition ?? defaults?.defaultCondition ?? 'Good',
- ),
- buy_price: item?.buy_price === undefined ? '' : String(item.buy_price),
- sell_price:
- item?.sell_price === null || item?.sell_price === undefined
-  ? ''
-  : String(item.sell_price),
- buy_platform: item ? getBuyPlatform(item) : defaults?.defaultPlatform ?? '',
- sell_platform: item ? getSellPlatform(item) : '',
- status: item?.status ?? defaults?.defaultStatus ?? 'holding',
- bought_at: formatDateInputValue(item?.bought_at) || formatTodayDateInputValue(),
- sold_at: formatDateInputValue(item?.sold_at),
- notes: item?.notes ?? '',
- }
 }
 
 function getInitialBundleChildren(
