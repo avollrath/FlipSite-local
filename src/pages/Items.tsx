@@ -669,6 +669,7 @@ export function Items() {
         open={drawer.open}
         mode={drawer.mode}
         item={drawer.item}
+        onEditItem={openEditDrawer}
         onOpenChange={closeDrawer}
       />
       <DeleteConfirmDialog

@@ -1,6 +1,7 @@
 import {
  FileText,
  Image as ImageIcon,
+ Info,
  Link2,
  Loader2,
  Plus,
@@ -73,6 +74,7 @@ type ItemDrawerProps = {
  onOpenChange: (open: boolean) => void
  mode: 'add' | 'edit'
  item?: Item | null
+ onEditItem?: (item: Item) => void
 }
 
 type DrawerFormProps = ItemDrawerProps
@@ -123,9 +125,9 @@ export function ItemDrawer(props: ItemDrawerProps) {
  )
 }
 
-function ItemDrawerForm({ mode, item, onOpenChange }: DrawerFormProps) {
+function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProps) {
  const queryClient = useQueryClient()
- const { data: items = [] } = useItems()
+ const { data: items = [], isLoading: isLoadingItems } = useItems()
  const addItem = useAddItem()
  const addBundle = useAddBundle()
  const updateItem = useUpdateItem()
@@ -167,6 +169,10 @@ function ItemDrawerForm({ mode, item, onOpenChange }: DrawerFormProps) {
  )
 
  const showSellFields = form.status === 'sold' || form.status === 'listed'
+ const isBundleChild = Boolean(item?.bundle_id)
+ const parentBundle = item?.bundle_id
+ ? items.find((existingItem) => existingItem.tsid === item.bundle_id)
+ : null
 
  const normalizedBuyPrice = parseMoneyInput(form.buy_price)
  const normalizedSellPrice = parseMoneyInput(form.sell_price)
@@ -179,7 +185,7 @@ function ItemDrawerForm({ mode, item, onOpenChange }: DrawerFormProps) {
  bundleChildSell: existingBundleChildSell,
  buyPrice: normalizedBuyPrice,
  isBundle,
- isBundleChild: Boolean(item?.bundle_id),
+ isBundleChild,
  sellPrice: normalizedSellPrice,
  })
  const roi =
@@ -589,9 +595,18 @@ function ItemDrawerForm({ mode, item, onOpenChange }: DrawerFormProps) {
   />
   </Field>
 
+  {isBundleChild ? (
+  <ParentBundleInfoBox
+   isLoading={isLoadingItems}
+   parentBundle={parentBundle}
+   onOpenParent={
+   parentBundle && onEditItem ? () => onEditItem(parentBundle) : undefined
+   }
+  />
+  ) : (
   <label className="flex items-center justify-between gap-4 rounded-lg border border-border-base bg-surface-2/60 p-4">
-  <span>
-   <span className="block text-sm font-semibold text-base ">
+   <span>
+    <span className="block text-sm font-semibold text-base ">
    This is a bundle
    </span>
    <span className="mt-1 block text-sm text-muted ">
@@ -608,10 +623,11 @@ function ItemDrawerForm({ mode, item, onOpenChange }: DrawerFormProps) {
    setBundleChildren([createEmptyBundleChild()])
    }
    }}
-  />
+   />
   </label>
+  )}
 
-  {isBundle ? (
+  {!isBundleChild && isBundle ? (
   <BundleItemsSection
    categoryOptions={categories}
    childrenForms={bundleChildren}
@@ -1199,6 +1215,43 @@ function getPreviewProfit({
  }
 
  return calcProfit(buyPrice, sellPrice)
+}
+
+function ParentBundleInfoBox({
+ isLoading,
+ onOpenParent,
+ parentBundle,
+}: {
+ isLoading: boolean
+ onOpenParent?: () => void
+ parentBundle: Item | null | undefined
+}) {
+ const label = isLoading
+ ? 'Loading bundle info...'
+ : parentBundle?.name ?? 'Unknown bundle'
+
+ return (
+ <section className="flex items-start gap-3 rounded-lg border border-border-base bg-surface-2/60 p-4">
+  <Info className="mt-0.5 h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
+  <div>
+  <p className="text-sm font-semibold text-base ">
+   This item is part of a bundle:
+  </p>
+  {parentBundle && onOpenParent ? (
+   <button
+   type="button"
+   className="mt-1 inline-flex items-center gap-1 text-left text-sm font-semibold text-accent transition hover:text-accent/80"
+   onClick={onOpenParent}
+   >
+   <Link2 className="h-4 w-4" aria-hidden="true" />
+   {parentBundle.name}
+   </button>
+  ) : (
+   <p className="mt-1 text-sm text-muted ">{label}</p>
+  )}
+  </div>
+ </section>
+ )
 }
 
 function BundleItemsSection({
