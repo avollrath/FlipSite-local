@@ -444,7 +444,9 @@ export function Items() {
     <section>
       <div
         className={`flex flex-col gap-4 ${
-          viewMode === "gallery" ? "max-w-[2512px]" : ""
+          viewMode === "gallery"
+            ? "max-w-[2108px] md:max-w-[2308px] xl:max-w-[2508px]"
+            : ""
         }`}
       >
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
@@ -1069,7 +1071,7 @@ function GalleryView({
   thumbnailByItemId: Map<string, ItemImageThumbnail>;
 }) {
   return (
-    <div className="mt-6 grid max-w-[2512px] grid-cols-1 justify-start gap-3 min-[384px]:grid-cols-2 min-[576px]:grid-cols-3 min-[768px]:grid-cols-4 min-[960px]:grid-cols-5 min-[1152px]:grid-cols-6 min-[1344px]:grid-cols-7 min-[1536px]:grid-cols-8 min-[1728px]:grid-cols-9 min-[1920px]:grid-cols-10">
+    <div className="mt-6 grid max-w-[2108px] grid-cols-[repeat(auto-fill,200px)] justify-start gap-3 md:max-w-[2308px] md:grid-cols-[repeat(auto-fill,220px)] xl:max-w-[2508px] xl:grid-cols-[repeat(auto-fill,240px)]">
       {items.map((item, index) => (
         <GalleryCard
           key={item.tsid}
@@ -1107,7 +1109,7 @@ function GalleryCard({
     <button
       type="button"
       style={{ animationDelay: `${Math.min(index * 40, 400)}ms` }}
-      className="group relative aspect-square w-full max-w-[240px] overflow-hidden rounded-lg bg-surface-2/70 text-left opacity-0 shadow-sm transition hover:shadow-md animate-fadeIn"
+      className="group relative aspect-square w-[200px] overflow-hidden rounded-lg bg-surface-2/70 text-left opacity-0 shadow-sm transition hover:shadow-md animate-fadeIn md:w-[220px] xl:w-[240px]"
       onClick={onEdit}
     >
       <ImageWithSkeleton
