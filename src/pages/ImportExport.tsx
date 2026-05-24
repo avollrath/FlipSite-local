@@ -9,6 +9,7 @@ import { downloadCsv, parseCsv, toCsv, type CsvRow } from '@/lib/csv'
 import { toSupabaseTimestamp } from '@/lib/dateInput'
 import { supabase } from '@/lib/supabase'
 import { getBuyPlatform, getSellPlatform, parseMoneyInput } from '@/lib/utils'
+import { normalizeItemCondition } from '@/lib/conditions'
 import type { Item, ItemStatus } from '@/types'
 
 type ImportPreviewRow = {
@@ -337,7 +338,7 @@ function toInsertRow(row: CsvRow, userId: string): Omit<Item, 'tsid' | 'created_
  bundle_id: row.bundle_id || null,
  buy_price: parseMoneyInput(row.buy_price) ?? 0,
  category: row.category.trim(),
- condition: row.condition.trim(),
+ condition: normalizeItemCondition(row.condition),
  is_bundle_parent: parseBoolean(row.is_bundle_parent),
  name: row.name.trim(),
  notes: row.notes?.trim() || null,

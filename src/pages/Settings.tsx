@@ -27,6 +27,7 @@ import {
  saveSetting,
  type FlipSiteSettings,
 } from '@/lib/settings'
+import { itemConditions } from '@/lib/conditions'
 import {
  fontOptions,
  themeOptions,
@@ -36,7 +37,6 @@ import {
 import { getBuyPlatform, getSellPlatform, getStatusLabel } from '@/lib/utils'
 import type { ItemStatus } from '@/types'
 
-const conditions = ['New', 'Like New', 'Good', 'Fair', 'Poor']
 const statuses: ItemStatus[] = ['holding', 'listed', 'sold', 'keeper']
 
 export function Settings() {
@@ -394,7 +394,7 @@ export function Settings() {
    updateSetting('defaultCondition', event.target.value)
    }
   >
-   {conditions.map((condition) => (
+   {itemConditions.map((condition) => (
    <option key={condition} value={condition}>
    {condition}
    </option>

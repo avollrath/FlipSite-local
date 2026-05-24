@@ -54,6 +54,7 @@ import {
  type ItemFile,
 } from '@/lib/itemFiles'
 import { getImageFilesFromClipboard } from '@/lib/clipboardImages'
+import { itemConditions, normalizeItemCondition } from '@/lib/conditions'
 import {
  formatDateInputValue,
  formatTodayDateInputValue,
@@ -110,7 +111,6 @@ type NormalizedBundleChild = Omit<NewBundleChild, 'buy_price'> & {
  tsid?: string
 }
 
-const conditions = ['New', 'Like New', 'Good', 'Fair', 'Poor']
 const statuses: ItemStatus[] = ['holding', 'listed', 'sold', 'keeper']
 
 export function ItemDrawer(props: ItemDrawerProps) {
@@ -160,16 +160,7 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
  ),
  [items],
  )
- const conditionOptions = useMemo(
- () =>
- uniqueValues([
-  ...conditions,
-  form.condition,
-  ...bundleChildren.map((child) => child.condition),
-  ...items.map((existingItem) => existingItem.condition),
- ]),
- [bundleChildren, form.condition, items],
- )
+ const conditionOptions = useMemo(() => [...itemConditions], [])
 
  const showSellFields = form.status === 'sold' || form.status === 'listed'
  const isBundleChild = Boolean(item?.bundle_id)
@@ -305,7 +296,7 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
  const payload: NewItem = {
  name,
  category,
- condition: form.condition,
+ condition: normalizeItemCondition(form.condition),
  buy_price: buyPriceValue,
  sell_price: showSellFields ? sellPriceValue : null,
  buy_platform: form.buy_platform.trim() || null,
@@ -383,7 +374,7 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
  const updates: ItemUpdate = {
   buy_price: child.buy_price ?? 0,
   category: child.category,
-  condition: child.condition,
+  condition: normalizeItemCondition(child.condition),
   name: child.name,
   status: child.status,
  }
@@ -435,7 +426,7 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
  tsid: child.tsid,
  name,
  category: child.category.trim(),
- condition: child.condition,
+ condition: normalizeItemCondition(child.condition),
  status: child.status,
  buy_price: splitCost ?? 0,
  notes: null,
@@ -1643,7 +1634,9 @@ function getInitialState(item?: Item | null): FormState {
  return {
  name: item?.name ?? '',
  category: item?.category ?? defaults?.defaultCategory ?? '',
- condition: item?.condition ?? defaults?.defaultCondition ?? 'Good',
+ condition: normalizeItemCondition(
+ item?.condition ?? defaults?.defaultCondition ?? 'Good',
+ ),
  buy_price: item?.buy_price === undefined ? '' : String(item.buy_price),
  sell_price:
  item?.sell_price === null || item?.sell_price === undefined
@@ -1673,7 +1666,7 @@ function getInitialBundleChildren(
  tsid: child.tsid,
  name: child.name,
  category: child.category,
- condition: child.condition,
+ condition: normalizeItemCondition(child.condition),
  status: child.status,
  buy_price: child.buy_price > 0 ? String(child.buy_price) : '',
  }))

@@ -82,7 +82,7 @@ const sellingPlatforms = [
   'Local pickup',
   'eBay',
 ]
-const conditions = ['Like New', 'Good', 'Very Good', 'Fair']
+const conditions = ['New', 'Like new', 'Good', 'Okay', 'Poor']
 const notes = {
   holding: [
     'Minor cosmetic wear, fully functional.',

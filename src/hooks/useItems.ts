@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { useAuth } from '@/hooks/useAuth'
 import { blockDemoMode, isDemoModeBlockedError } from '@/lib/demoMode'
 import { supabase } from '@/lib/supabase'
+import { normalizeItemCondition } from '@/lib/conditions'
 import type { Item } from '@/types'
 
 export const itemsQueryKey = (userId: string | undefined) => [
@@ -50,9 +51,16 @@ export function useItems() {
         throw error
       }
 
-      return data as Item[]
+      return (data as Item[]).map(normalizeItem)
     },
   })
+}
+
+function normalizeItem(item: Item): Item {
+  return {
+    ...item,
+    condition: normalizeItemCondition(item.condition),
+  }
 }
 
 export function useAddItem() {
@@ -79,7 +87,7 @@ export function useAddItem() {
         throw error
       }
 
-      const createdItem = data as Item
+      const createdItem = normalizeItem(data as Item)
 
       if (createdItem.bundle_id) {
         await markBundleParentSoldIfComplete(createdItem.bundle_id, user.id)
@@ -131,7 +139,7 @@ export function useAddBundle() {
         throw parentError
       }
 
-      const typedParent = parentItem as Item
+      const typedParent = normalizeItem(parentItem as Item)
 
       if (children.length > 0) {
         const childRows = children.map((child) => ({
@@ -199,7 +207,7 @@ export function useUpdateItem() {
         throw error
       }
 
-      const updatedItem = data as Item
+      const updatedItem = normalizeItem(data as Item)
 
       if (syncBundleParent && updatedItem.bundle_id) {
         await markBundleParentSoldIfComplete(updatedItem.bundle_id, user.id)

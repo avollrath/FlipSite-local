@@ -1,4 +1,5 @@
 import type { ItemStatus } from '@/types'
+import { normalizeItemCondition } from '@/lib/conditions'
 
 export type FlipSiteSettings = {
   defaultCategory: string
@@ -40,9 +41,11 @@ export function loadSettings(): FlipSiteSettings {
         legacySettings.defaultCategory ??
         defaultSettings.defaultCategory,
       defaultCondition:
-        window.localStorage.getItem(settingStorageKeys.defaultCondition) ??
-        legacySettings.defaultCondition ??
-        defaultSettings.defaultCondition,
+        normalizeItemCondition(
+          window.localStorage.getItem(settingStorageKeys.defaultCondition) ??
+            legacySettings.defaultCondition ??
+            defaultSettings.defaultCondition,
+        ),
       defaultPlatform:
         window.localStorage.getItem(settingStorageKeys.defaultPlatform) ??
         legacySettings.defaultPlatform ??
