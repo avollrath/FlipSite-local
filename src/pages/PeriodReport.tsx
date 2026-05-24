@@ -77,6 +77,7 @@ const columns: Array<{ key: SortKey; label: string }> = [
 ]
 
 const thumbnailSize = 80
+const bundleChildAccountingNote = 'Included in bundle parent'
 const dateInputClassName =
   'h-10 min-w-36 rounded-lg border border-border-base bg-card px-3 text-sm text-base outline-none transition placeholder:text-muted focus:border-accent focus:ring-4 focus:ring-accent/10'
 
@@ -543,13 +544,34 @@ function ReportRow({
       <td className="px-4 py-4 text-muted">{formatDateInputValue(item.sold_at) || '--'}</td>
       <td className="px-4 py-4">{formatCurrency(item.buy_price)}</td>
       <td className={cn('px-4 py-4', isKeeper && 'text-muted')}>
-        {isKeeper ? '--' : formatCurrency(sellValue)}
+        {isKeeper ? (
+          '--'
+        ) : isChild ? (
+          <div>
+            <span>{formatCurrency(sellValue)}</span>
+            <span className="block text-xs font-medium text-muted">Revenue</span>
+          </div>
+        ) : (
+          formatCurrency(sellValue)
+        )}
       </td>
       <td className={cn('px-4 py-4 font-semibold', isKeeper ? 'text-muted' : metricTextClassName(profit))}>
-        {isKeeper || profit === null ? '--' : formatCurrency(profit)}
+        {isChild ? (
+          <span className="text-xs font-medium text-muted">{bundleChildAccountingNote}</span>
+        ) : isKeeper || profit === null ? (
+          '--'
+        ) : (
+          formatCurrency(profit)
+        )}
       </td>
       <td className={cn('px-4 py-4 font-semibold', isKeeper ? 'text-muted' : metricTextClassName(roi))}>
-        {isKeeper || roi === null ? '--' : `${roi.toFixed(1)}%`}
+        {isChild ? (
+          <span className="text-xs font-medium text-muted">{bundleChildAccountingNote}</span>
+        ) : isKeeper || roi === null ? (
+          '--'
+        ) : (
+          `${roi.toFixed(1)}%`
+        )}
       </td>
     </tr>
   )
@@ -649,16 +671,28 @@ function ReportCard({
         <MobileMetric label="Bought" value={formatDateInputValue(item.bought_at)} />
         <MobileMetric label="Sold" value={formatDateInputValue(item.sold_at) || '--'} />
         <MobileMetric label="Buy" value={formatCurrency(item.buy_price)} />
-        <MobileMetric label="Sell" value={isKeeper ? '--' : formatCurrency(sellValue)} />
+        <MobileMetric label={isChild ? 'Revenue' : 'Sell'} value={isKeeper ? '--' : formatCurrency(sellValue)} />
         <MobileMetric
           label="Profit"
           tone={isKeeper ? null : profit}
-          value={isKeeper || profit === null ? '--' : formatCurrency(profit)}
+          value={
+            isChild
+              ? bundleChildAccountingNote
+              : isKeeper || profit === null
+                ? '--'
+                : formatCurrency(profit)
+          }
         />
         <MobileMetric
           label="ROI"
           tone={isKeeper ? null : roi}
-          value={isKeeper || roi === null ? '--' : `${roi.toFixed(1)}%`}
+          value={
+            isChild
+              ? bundleChildAccountingNote
+              : isKeeper || roi === null
+                ? '--'
+                : `${roi.toFixed(1)}%`
+          }
         />
       </div>
     </button>
