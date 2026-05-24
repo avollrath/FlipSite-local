@@ -4,6 +4,7 @@ import {
   calculateItemSellValue,
   getBuyPlatform,
   getEffectiveItemStatus,
+  getSellPlatform,
   isAggregateItem,
   isKeepingItem,
   sumCurrency,
@@ -50,6 +51,36 @@ export type CumulativeProfitDatum = {
   actual: number
   date: string
   pace: number
+}
+
+export type DashboardFlipInsight = {
+  name: string
+  profit: number
+  revenue: number
+  tsid: string
+}
+
+export type DashboardUnsoldItem = {
+  boughtAt: string
+  buyPrice: number
+  daysHeld: number
+  name: string
+  tsid: string
+}
+
+export type DashboardMetrics = {
+  bestFlip: DashboardFlipInsight | null
+  biggestLoss: DashboardFlipInsight | null
+  cashTiedUp: number
+  keepingValue: number
+  netProfit: number
+  oldestUnsoldItem: DashboardUnsoldItem | null
+  profitByCategory: ChartDatum[]
+  profitByMonth: ChartDatum[]
+  profitByPlatform: ChartDatum[]
+  revenue: number
+  soldCount: number
+  unsoldCount: number
 }
 
 export function getFlippingAggregateItems(items: Item[]) {
@@ -103,6 +134,62 @@ export function buildSummary(items: Item[]): AnalyticsSummary {
     worstFlip: worstStat
       ? { name: worstStat.item.name, profit: worstStat.profit, roi: worstStat.roi }
       : null,
+  }
+}
+
+export function buildDashboardMetrics(items: Item[]): DashboardMetrics {
+  // Dashboard definitions:
+  // - sold metrics use aggregate resale items with effective status "sold" and real sell value.
+  // - unsold cash excludes keepers and bundle children, then uses buy price for holding/listed resale items.
+  // - keeping value is buy price for aggregate items marked keeper/keeping.
+  const soldItems = getSoldAggregateItems(items)
+  const unsoldItems = getFlippingAggregateItems(items).filter((item) =>
+    ['holding', 'listed'].includes(getEffectiveItemStatus(item, items)),
+  )
+  const keepingItems = items.filter(isAggregateItem).filter(isKeepingItem)
+  const soldStats = soldItems.map((item) => ({
+    item,
+    profit: calculateItemProfit(item, items),
+    revenue: calculateItemSellValue(item, items),
+  }))
+  const bestStat = soldStats.toSorted((a, b) => b.profit - a.profit)[0]
+  const lossStat = soldStats
+    .filter((stat) => stat.profit < 0)
+    .toSorted((a, b) => a.profit - b.profit)[0]
+  const oldestUnsold = unsoldItems.toSorted(
+    (a, b) => dateValue(a.bought_at) - dateValue(b.bought_at),
+  )[0]
+
+  return {
+    bestFlip: bestStat ? toDashboardFlipInsight(bestStat) : null,
+    biggestLoss: lossStat ? toDashboardFlipInsight(lossStat) : null,
+    cashTiedUp: sumCurrency(unsoldItems.map((item) => item.buy_price)),
+    keepingValue: sumCurrency(keepingItems.map((item) => item.buy_price)),
+    netProfit: sumCurrency(soldStats.map((stat) => stat.profit)),
+    oldestUnsoldItem: oldestUnsold
+      ? {
+        boughtAt: oldestUnsold.bought_at,
+        buyPrice: oldestUnsold.buy_price,
+        daysHeld: Math.max(
+          0,
+          Math.round((Date.now() - dateValue(oldestUnsold.bought_at)) / 86_400_000),
+        ),
+        name: oldestUnsold.name,
+        tsid: oldestUnsold.tsid,
+      }
+      : null,
+    profitByCategory: buildProfitByCategory(items),
+    profitByMonth: buildMonthlyPerformance(items).map(({ label, profit = 0 }) => ({
+      label,
+      profit,
+    })),
+    profitByPlatform: buildProfitBreakdown(
+      items,
+      (item) => getSellPlatform(item) || getBuyPlatform(item) || 'Unknown',
+    ),
+    revenue: sumCurrency(soldStats.map((stat) => stat.revenue)),
+    soldCount: soldItems.length,
+    unsoldCount: unsoldItems.length,
   }
 }
 
@@ -268,6 +355,23 @@ function buildProfitBreakdown(items: Item[], getLabel: (item: Item) => string): 
   return Array.from(data, ([label, profit]) => ({ label, profit })).sort(
     (a, b) => (b.profit ?? 0) - (a.profit ?? 0),
   )
+}
+
+function toDashboardFlipInsight({
+  item,
+  profit,
+  revenue,
+}: {
+  item: Item
+  profit: number
+  revenue: number
+}): DashboardFlipInsight {
+  return {
+    name: item.name,
+    profit,
+    revenue,
+    tsid: item.tsid,
+  }
 }
 
 export function getEffectiveSoldAt(item: Item, items: Item[]) {
