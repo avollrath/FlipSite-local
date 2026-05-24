@@ -687,6 +687,37 @@ function GallerySortControl({
   );
 }
 
+function FilterSelect({
+  className = "min-w-[150px] flex-[0_1_180px]",
+  label,
+  onChange,
+  options,
+  value,
+}: {
+  className?: string;
+  label: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+  value: string;
+}) {
+  return (
+    <label className={`block ${className}`}>
+      <span className="sr-only">{label}</span>
+      <select
+        className={selectControlClassName}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function LoadingState() {
   return (
     <div className="mt-6 overflow-hidden rounded-lg shadow-sm bg-card">
