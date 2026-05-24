@@ -33,20 +33,22 @@ export function Layout() {
       />
       <div className={`flex-1 min-h-screen overflow-auto transition-all duration-200 ease-out ${sidebarWidth}`}>
         <header className="sticky top-0 z-30 border-b border-subtle bg-surface/85 backdrop-blur">
-          <div className="flex items-center justify-between h-16 px-5 md:px-8">
-            <div aria-hidden="true" />
-            <button
-              type="button"
-              className="grid w-10 h-10 transition border rounded-lg shadow-sm place-items-center border-layout bg-card text-muted hover:border-accent/40 hover:text-accent"
-              onClick={toggleMode}
-              aria-label="Toggle dark mode"
-            >
-              {mode === "dark" ? (
-                <Sun className="w-5 h-5" aria-hidden="true" />
-              ) : (
-                <Moon className="w-5 h-5" aria-hidden="true" />
-              )}
-            </button>
+          <div className="h-16 px-5 md:px-8">
+            <div className="flex h-full max-w-[1500px] items-center justify-between">
+              <div aria-hidden="true" />
+              <button
+                type="button"
+                className="grid w-10 h-10 transition border rounded-lg shadow-sm place-items-center border-layout bg-card text-muted hover:border-accent/40 hover:text-accent"
+                onClick={toggleMode}
+                aria-label="Toggle dark mode"
+              >
+                {mode === "dark" ? (
+                  <Sun className="w-5 h-5" aria-hidden="true" />
+                ) : (
+                  <Moon className="w-5 h-5" aria-hidden="true" />
+                )}
+              </button>
+            </div>
           </div>
         </header>
         {isDemoMode && (
