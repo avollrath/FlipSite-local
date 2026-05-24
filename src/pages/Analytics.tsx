@@ -614,7 +614,7 @@ function InventoryAgeList({
               </span>
             </span>
             <span className="shrink-0 rounded-full border border-subtle px-2.5 py-1 text-xs font-semibold text-muted">
-              {item.daysHeld}d
+              Held {item.daysHeld}d
             </span>
           </button>
         ))}
@@ -649,7 +649,7 @@ function EmptyChart() {
     <div className="grid h-[220px] place-items-center rounded-lg border border-dashed border-subtle bg-surface-2/50 text-center">
       <div>
         <PackageSearch className="mx-auto h-6 w-6 text-muted" aria-hidden="true" />
-        <p className="mt-2 text-sm text-muted">No data for selected filters</p>
+        <p className="mt-2 text-sm text-muted">No sold items match these filters</p>
       </div>
     </div>
   )
