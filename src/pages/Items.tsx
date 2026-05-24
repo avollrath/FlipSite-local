@@ -444,7 +444,7 @@ export function Items() {
     <section>
       <div
         className={`flex flex-col gap-4 ${
-          viewMode === "gallery" ? "max-w-[1500px]" : ""
+          viewMode === "gallery" ? "max-w-[2512px]" : ""
         }`}
       >
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
@@ -1069,7 +1069,7 @@ function GalleryView({
   thumbnailByItemId: Map<string, ItemImageThumbnail>;
 }) {
   return (
-    <div className="mt-6 grid max-w-[1500px] grid-cols-1 justify-start gap-3 min-[384px]:grid-cols-2 min-[576px]:grid-cols-3 min-[768px]:grid-cols-4 min-[960px]:grid-cols-5 min-[1152px]:grid-cols-6">
+    <div className="mt-6 grid max-w-[2512px] grid-cols-1 justify-start gap-3 min-[384px]:grid-cols-2 min-[576px]:grid-cols-3 min-[768px]:grid-cols-4 min-[960px]:grid-cols-5 min-[1152px]:grid-cols-6 min-[1344px]:grid-cols-7 min-[1536px]:grid-cols-8 min-[1728px]:grid-cols-9 min-[1920px]:grid-cols-10">
       {items.map((item, index) => (
         <GalleryCard
           key={item.tsid}
