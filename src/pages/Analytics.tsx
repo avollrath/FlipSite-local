@@ -11,18 +11,12 @@ import {
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
-  LabelList,
-  Line,
   ReferenceLine,
   ResponsiveContainer,
-  Scatter,
-  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
@@ -33,13 +27,7 @@ import { DatePickerInput } from '@/components/ui/DatePickerInput'
 import { useItems } from '@/hooks/useItems'
 import {
   average,
-  buildCumulativeProfit,
   buildDashboardMetrics,
-  buildDurationProfit,
-  buildMonthlyPerformance,
-  buildProfitByCategory,
-  buildProfitByPlatform,
-  buildRoiDistribution,
   getEffectiveSoldAt,
 } from '@/lib/analytics'
 import { formatCompactCurrency, getChartColors } from '@/lib/chartUtils'
@@ -142,12 +130,9 @@ export function Analytics() {
     () => buildDashboardMetrics(filteredItems),
     [filteredItems],
   )
-  const monthlyData = useMemo(() => buildMonthlyPerformance(filteredItems), [filteredItems])
-  const profitByCategory = useMemo(() => buildProfitByCategory(filteredItems), [filteredItems])
-  const profitByPlatform = useMemo(() => buildProfitByPlatform(filteredItems), [filteredItems])
-  const roiDistribution = useMemo(() => buildRoiDistribution(filteredItems), [filteredItems])
-  const durationProfit = useMemo(() => buildDurationProfit(filteredItems), [filteredItems])
-  const cumulativeProfit = useMemo(() => buildCumulativeProfit(filteredItems), [filteredItems])
+  const monthlyProfit = dashboardMetrics.profitByMonth
+  const profitByCategory = dashboardMetrics.profitByCategory
+  const profitByPlatform = dashboardMetrics.profitByPlatform
   const activeFilterCount =
     (datePreset === 'all' ? 0 : 1) +
     categories.length +
@@ -297,63 +282,25 @@ export function Analytics() {
         />
       </div>
 
-      <SectionHeading>Monthly Breakdown</SectionHeading>
+      <SectionHeading>Trends</SectionHeading>
       <div className="grid gap-4 xl:grid-cols-2">
         <ChartShell
-          hasData={monthlyData.length > 0}
-          legend={<DotLegend items={[{ color: colors.accent, label: 'Revenue' }]} />}
-          title="Monthly Revenue"
-        >
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={monthlyData}>
-              <ChartGradients colors={colors} idSuffix="analytics-revenue" />
-              <ChartGrid />
-              <ChartXAxis
-                dataKey="label"
-                rotate={monthlyData.length > 6}
-                tickFormatter={formatMonthKey}
-              />
-              <ChartYAxis />
-              <ReferenceLine
-                y={average(monthlyData.map((entry) => entry.revenue ?? 0))}
-                stroke={colors.muted}
-                strokeDasharray="4 4"
-                label={referenceLabel('avg')}
-              />
-              <Tooltip content={<CurrencyTooltip />} cursor={{ fill: 'transparent' }} />
-              <Bar
-                activeBar={{ fill: colors.accent, filter: 'brightness(1.15)', opacity: 1 }}
-                animationDuration={600}
-                animationEasing="ease-out"
-                dataKey="revenue"
-                fill="url(#gradientAccent-analytics-revenue)"
-                isAnimationActive
-                maxBarSize={28}
-                name="Revenue"
-                opacity={0.85}
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartShell>
-
-        <ChartShell
-          hasData={monthlyData.length > 0}
+          hasData={monthlyProfit.length > 0}
           legend={<DotLegend items={[{ color: colors.positive, label: 'Positive' }, { color: colors.negative, label: 'Negative' }]} />}
           title="Monthly Profit"
         >
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={monthlyData}>
+            <BarChart data={monthlyProfit}>
               <ChartGradients colors={colors} idSuffix="analytics-monthly-profit" />
               <ChartGrid />
               <ChartXAxis
                 dataKey="label"
-                rotate={monthlyData.length > 6}
+                rotate={monthlyProfit.length > 6}
                 tickFormatter={formatMonthKey}
               />
               <ChartYAxis />
               <ReferenceLine
-                y={average(monthlyData.map((entry) => entry.profit ?? 0))}
+                y={average(monthlyProfit.map((entry) => entry.profit ?? 0))}
                 stroke={colors.muted}
                 strokeDasharray="4 4"
                 label={referenceLabel('avg')}
@@ -369,7 +316,7 @@ export function Analytics() {
                 name="Profit"
                 radius={[4, 4, 0, 0]}
               >
-                {monthlyData.map((entry) => (
+                {monthlyProfit.map((entry) => (
                   <Cell
                     key={entry.label}
                     fill={
@@ -388,13 +335,10 @@ export function Analytics() {
 
         <ProfitBarChart colors={colors} data={profitByCategory} title="Profit by Category" />
         <ProfitBarChart colors={colors} data={profitByPlatform} title="Profit by Platform" />
-      </div>
-
-      <SectionHeading>Digging Deeper</SectionHeading>
-      <div className="grid gap-4 xl:grid-cols-2">
-        <RoiDistributionChart colors={colors} data={roiDistribution} />
-        <DurationProfitChart colors={colors} data={durationProfit} />
-        <CumulativeProfitChart colors={colors} data={cumulativeProfit} />
+        <InventoryAgeList
+          items={dashboardMetrics.oldestUnsoldItems}
+          onOpenItem={(itemId) => navigate(`/items?item=${itemId}`)}
+        />
       </div>
     </section>
   )
@@ -640,190 +584,45 @@ function ProfitBarChart({
   )
 }
 
-function RoiDistributionChart({
-  colors,
-  data,
+function InventoryAgeList({
+  items,
+  onOpenItem,
 }: {
-  colors: ReturnType<typeof getChartColors>
-  data: ChartDatum[]
+  items: Array<{ buyPrice: number; daysHeld: number; name: string; tsid: string }>
+  onOpenItem: (itemId: string) => void
 }) {
   return (
-    <ChartShell
-      hasData={data.length > 0}
-      legend={<DotLegend items={[{ color: colors.accent, label: 'Average ROI' }]} />}
-      title="Best Categories to Flip"
+    <ChartCard
+      hasData={items.length > 0}
+      title="Oldest Unsold Items"
+      emptyText="No unsold resale inventory for selected filters."
     >
-      <ResponsiveContainer width="100%" height={220}>
-        <BarChart data={data} layout="vertical" margin={{ right: 32 }}>
-          <ChartGradients colors={colors} idSuffix="analytics-roi" />
-          <ChartGrid />
-          <XAxis
-            axisLine={false}
-            fontSize={11}
-            stroke="hsl(var(--text-muted))"
-            tick={{ fill: 'hsl(var(--text-muted))', fontSize: 11 }}
-            tickFormatter={(value) => `${Number(value).toFixed(0)}%`}
-            tickLine={false}
-            type="number"
-          />
-          <YAxis
-            axisLine={false}
-            dataKey="label"
-            fontSize={11}
-            stroke="hsl(var(--text-muted))"
-            tick={{ fill: 'hsl(var(--text-muted))', fontSize: 11 }}
-            tickLine={false}
-            type="category"
-            width={92}
-          />
-          <Tooltip content={<PercentTooltip />} cursor={{ fill: 'transparent' }} />
-          <Bar
-            animationDuration={600}
-            animationEasing="ease-out"
-            dataKey="roi"
-            fill="url(#gradientAccent-analytics-roi)"
-            isAnimationActive
-            maxBarSize={18}
-            name="Average ROI"
-            radius={[0, 4, 4, 0]}
+      <div className="divide-y divide-subtle">
+        {items.map((item) => (
+          <button
+            key={item.tsid}
+            type="button"
+            className="flex w-full items-center justify-between gap-4 py-3 text-left transition hover:text-accent"
+            onClick={() => onOpenItem(item.tsid)}
           >
-            <LabelList
-              dataKey="roi"
-              fill="hsl(var(--text-muted))"
-              fontSize={11}
-              formatter={(value) => `${Number(value ?? 0).toFixed(0)}%`}
-              position="right"
-            />
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </ChartShell>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-base">
+                {item.name}
+              </span>
+              <span className="mt-1 block text-xs text-muted">
+                {formatCurrency(item.buyPrice)} tied up
+              </span>
+            </span>
+            <span className="shrink-0 rounded-full border border-subtle px-2.5 py-1 text-xs font-semibold text-muted">
+              {item.daysHeld}d
+            </span>
+          </button>
+        ))}
+      </div>
+    </ChartCard>
   )
 }
 
-function DurationProfitChart({
-  colors,
-  data,
-}: {
-  colors: ReturnType<typeof getChartColors>
-  data: Array<{ days: number; name: string; profit: number }>
-}) {
-  return (
-    <ChartShell
-      hasData={data.length > 0}
-      legend={<DotLegend items={[{ color: colors.accent, label: 'Sold item' }]} />}
-      title="Does Waiting Pay Off?"
-    >
-      <ResponsiveContainer width="100%" height={220}>
-        <ScatterChart>
-          <ChartGrid />
-          <XAxis
-            axisLine={false}
-            dataKey="days"
-            fontSize={11}
-            label={{
-              fill: 'hsl(var(--text-muted))',
-              fontSize: 11,
-              offset: -2,
-              position: 'insideBottom',
-              value: 'Days held before selling',
-            }}
-            name="Days held before selling"
-            stroke="hsl(var(--text-muted))"
-            tick={{ fill: 'hsl(var(--text-muted))', fontSize: 11 }}
-            tickLine={false}
-            type="number"
-          />
-          <YAxis
-            axisLine={false}
-            dataKey="profit"
-            fontSize={11}
-            label={{
-              angle: -90,
-              fill: 'hsl(var(--text-muted))',
-              fontSize: 11,
-              position: 'insideLeft',
-              value: 'Profit (€)',
-            }}
-            name="Profit (€)"
-            stroke="hsl(var(--text-muted))"
-            tick={{ fill: 'hsl(var(--text-muted))', fontSize: 11 }}
-            tickFormatter={(value) => formatCompactCurrency(Number(value))}
-            tickLine={false}
-            type="number"
-            width={48}
-          />
-          <Tooltip content={<ScatterTooltip />} cursor={{ stroke: colors.accent, strokeOpacity: 0.2 }} />
-          <Scatter
-            animationDuration={600}
-            animationEasing="ease-out"
-            data={data}
-            fill={colors.accent}
-            isAnimationActive
-            name="Sold item"
-          />
-        </ScatterChart>
-      </ResponsiveContainer>
-    </ChartShell>
-  )
-}
-
-function CumulativeProfitChart({
-  colors,
-  data,
-}: {
-  colors: ReturnType<typeof getChartColors>
-  data: Array<{ actual: number; date: string; pace: number }>
-}) {
-  return (
-    <ChartShell
-      hasData={data.length > 0}
-      legend={<DotLegend items={[{ color: colors.accent, label: 'Your profit' }, { color: colors.muted, label: 'Steady pace' }]} />}
-      title="Profit Over Time"
-    >
-      <ResponsiveContainer width="100%" height={220}>
-        <AreaChart data={data}>
-          <defs>
-            <linearGradient id="analytics-cumulative-profit" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="5%" stopColor={colors.accent} stopOpacity={0.25} />
-              <stop offset="95%" stopColor={colors.accent} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <ChartGrid />
-          <ReferenceLine y={0} stroke="hsl(var(--border))" strokeWidth={1} />
-          <ChartXAxis dataKey="date" preserve rotate={false} />
-          <ChartYAxis />
-          <Tooltip content={<CurrencyTooltip />} cursor={{ stroke: colors.accent, strokeOpacity: 0.18 }} />
-          <Area
-            activeDot={{ fill: colors.accent, r: 4, strokeWidth: 0 }}
-            animationDuration={600}
-            animationEasing="ease-out"
-            dataKey="actual"
-            dot={false}
-            fill="url(#analytics-cumulative-profit)"
-            isAnimationActive
-            name="Your profit"
-            stroke={colors.accent}
-            strokeWidth={2}
-            type="monotone"
-          />
-          <Line
-            animationDuration={600}
-            animationEasing="ease-out"
-            dataKey="pace"
-            dot={false}
-            isAnimationActive
-            name="Steady pace"
-            stroke={colors.muted}
-            strokeDasharray="4 4"
-            strokeWidth={2}
-            type="monotone"
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </ChartShell>
-  )
-}
 
 function ChartShell({
   children,
@@ -965,39 +764,6 @@ function CurrencyTooltip({ active, label, payload }: TooltipProps) {
   )
 }
 
-function PercentTooltip({ active, label, payload }: TooltipProps) {
-  if (!active || !payload?.length) {
-    return null
-  }
-
-  return (
-    <div className="rounded-lg bg-card px-3 py-2 text-xs text-muted shadow-lg">
-      <p className="mb-1 text-xs text-muted">{label}</p>
-      <p className="text-xs">
-        <span style={{ color: payload[0].color }}>{payload[0].name}: </span>
-        <span className="text-xs font-bold text-base">{payload[0].value.toFixed(1)}%</span>
-      </p>
-    </div>
-  )
-}
-
-function ScatterTooltip({ active, payload }: TooltipProps) {
-  if (!active || !payload?.length) {
-    return null
-  }
-
-  const datum = payload[0].payload as { days: number; name: string; profit: number }
-
-  return (
-    <div className="rounded-lg bg-card px-3 py-2 text-xs text-muted shadow-lg">
-      <p className="mb-1 max-w-56 truncate text-xs text-base">{datum.name}</p>
-      <p>
-        Held {datum.days} days · earned{' '}
-        <span className="font-bold text-base">{formatCurrency(datum.profit)}</span>
-      </p>
-    </div>
-  )
-}
 
 function DotLegend({ items }: { items: Array<{ color: string; label: string }> }) {
   return (

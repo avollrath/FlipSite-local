@@ -75,6 +75,7 @@ export type DashboardMetrics = {
   keepingValue: number
   netProfit: number
   oldestUnsoldItem: DashboardUnsoldItem | null
+  oldestUnsoldItems: DashboardUnsoldItem[]
   profitByCategory: ChartDatum[]
   profitByMonth: ChartDatum[]
   profitByPlatform: ChartDatum[]
@@ -156,9 +157,11 @@ export function buildDashboardMetrics(items: Item[]): DashboardMetrics {
   const lossStat = soldStats
     .filter((stat) => stat.profit < 0)
     .toSorted((a, b) => a.profit - b.profit)[0]
-  const oldestUnsold = unsoldItems.toSorted(
-    (a, b) => dateValue(a.bought_at) - dateValue(b.bought_at),
-  )[0]
+  const oldestUnsoldItems = unsoldItems
+    .toSorted((a, b) => dateValue(a.bought_at) - dateValue(b.bought_at))
+    .slice(0, 5)
+    .map(toDashboardUnsoldItem)
+  const oldestUnsold = oldestUnsoldItems[0] ?? null
 
   return {
     bestFlip: bestStat ? toDashboardFlipInsight(bestStat) : null,
@@ -166,18 +169,8 @@ export function buildDashboardMetrics(items: Item[]): DashboardMetrics {
     cashTiedUp: sumCurrency(unsoldItems.map((item) => item.buy_price)),
     keepingValue: sumCurrency(keepingItems.map((item) => item.buy_price)),
     netProfit: sumCurrency(soldStats.map((stat) => stat.profit)),
-    oldestUnsoldItem: oldestUnsold
-      ? {
-        boughtAt: oldestUnsold.bought_at,
-        buyPrice: oldestUnsold.buy_price,
-        daysHeld: Math.max(
-          0,
-          Math.round((Date.now() - dateValue(oldestUnsold.bought_at)) / 86_400_000),
-        ),
-        name: oldestUnsold.name,
-        tsid: oldestUnsold.tsid,
-      }
-      : null,
+    oldestUnsoldItem: oldestUnsold,
+    oldestUnsoldItems,
     profitByCategory: buildProfitByCategory(items),
     profitByMonth: buildMonthlyPerformance(items).map(({ label, profit = 0 }) => ({
       label,
@@ -370,6 +363,19 @@ function toDashboardFlipInsight({
     name: item.name,
     profit,
     revenue,
+    tsid: item.tsid,
+  }
+}
+
+function toDashboardUnsoldItem(item: Item): DashboardUnsoldItem {
+  return {
+    boughtAt: item.bought_at,
+    buyPrice: item.buy_price,
+    daysHeld: Math.max(
+      0,
+      Math.round((Date.now() - dateValue(item.bought_at)) / 86_400_000),
+    ),
+    name: item.name,
     tsid: item.tsid,
   }
 }
