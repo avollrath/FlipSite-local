@@ -33,14 +33,16 @@ import {
 import { formatCompactCurrency, getChartColors } from '@/lib/chartUtils'
 import { toSupabaseTimestamp } from '@/lib/dateInput'
 import { formatMonthKey } from '@/lib/dateUtils'
+import {
+  getEffectiveItemStatus,
+  isAggregateItem,
+  isKeepingItem,
+} from '@/lib/itemAccounting'
 import { useTheme } from '@/lib/theme'
 import {
   formatCurrency,
   getBuyPlatform,
-  getEffectiveItemStatus,
   getSellPlatform,
-  isAggregateItem,
-  isKeepingItem,
 } from '@/lib/utils'
 import type { Item } from '@/types'
 import { useNavigate } from 'react-router-dom'

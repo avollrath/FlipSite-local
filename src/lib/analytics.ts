@@ -2,11 +2,17 @@ import {
   calculateItemProfit,
   calculateItemROI,
   calculateItemSellValue,
-  getBuyPlatform,
+  getFlippingAggregateItems,
   getEffectiveItemStatus,
-  getSellPlatform,
+  getKeepingAggregateItems,
+  getSoldAggregateItems,
+  getUnsoldResaleAggregateItems,
   isAggregateItem,
   isKeepingItem,
+} from '@/lib/itemAccounting'
+import {
+  getBuyPlatform,
+  getSellPlatform,
   sumCurrency,
 } from '@/lib/utils'
 import { toMonthKey } from '@/lib/dateUtils'
@@ -84,24 +90,9 @@ export type DashboardMetrics = {
   unsoldCount: number
 }
 
-export function getFlippingAggregateItems(items: Item[]) {
-  return items.filter(isAggregateItem).filter((item) => !isKeepingItem(item))
-}
-
-export function getSoldAggregateItems(items: Item[]) {
-  return getFlippingAggregateItems(items).filter(
-    (item) =>
-      getEffectiveItemStatus(item, items) === 'sold' &&
-      calculateItemSellValue(item, items) > 0,
-  )
-}
-
 export function buildSummary(items: Item[]): AnalyticsSummary {
-  const aggregateItems = getFlippingAggregateItems(items)
   const soldItems = getSoldAggregateItems(items)
-  const activeItems = aggregateItems.filter((item) =>
-    ['holding', 'listed'].includes(getEffectiveItemStatus(item, items)),
-  )
+  const activeItems = getUnsoldResaleAggregateItems(items)
   const soldStats = soldItems.map((item) => {
     const profit = calculateItemProfit(item, items)
     const roi = calculateItemROI(item, items) ?? 0
@@ -144,10 +135,8 @@ export function buildDashboardMetrics(items: Item[]): DashboardMetrics {
   // - unsold cash excludes keepers and bundle children, then uses buy price for holding/listed resale items.
   // - keeping value is buy price for aggregate items marked keeper/keeping.
   const soldItems = getSoldAggregateItems(items)
-  const unsoldItems = getFlippingAggregateItems(items).filter((item) =>
-    ['holding', 'listed'].includes(getEffectiveItemStatus(item, items)),
-  )
-  const keepingItems = items.filter(isAggregateItem).filter(isKeepingItem)
+  const unsoldItems = getUnsoldResaleAggregateItems(items)
+  const keepingItems = getKeepingAggregateItems(items)
   const soldStats = soldItems.map((item) => ({
     item,
     profit: calculateItemProfit(item, items),
