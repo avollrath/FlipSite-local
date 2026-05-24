@@ -26,6 +26,7 @@ import {
  type ReportSortKey,
  type ReportSortState,
 } from '@/components/reports/periodReportModel'
+import { BundleBadge } from '@/components/items/ItemDisplay'
 
 const bundleChildAccountingNote = 'Included in bundle parent'
 
@@ -459,14 +460,6 @@ function StatusBadge({ status }: { status: ItemStatus }) {
   className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${className}`}
  >
   {getStatusLabel(status)}
- </span>
- )
-}
-
-function BundleBadge({ count }: { count: number }) {
- return (
- <span className="inline-flex rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent bg-accent/15">
-  Bundle ({count})
  </span>
  )
 }
