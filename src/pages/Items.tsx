@@ -1065,7 +1065,7 @@ function GalleryView({
   thumbnailByItemId: Map<string, ItemImageThumbnail>;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-3 mt-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+    <div className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),240px))] justify-center gap-3">
       {items.map((item, index) => (
         <GalleryCard
           key={item.tsid}
@@ -1103,7 +1103,7 @@ function GalleryCard({
     <button
       type="button"
       style={{ animationDelay: `${Math.min(index * 40, 400)}ms` }}
-      className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-surface-2/70 text-left opacity-0 shadow-sm transition hover:shadow-md animate-fadeIn"
+      className="group relative aspect-square w-full max-w-[240px] overflow-hidden rounded-lg bg-surface-2/70 text-left opacity-0 shadow-sm transition hover:shadow-md animate-fadeIn"
       onClick={onEdit}
     >
       <ImageWithSkeleton

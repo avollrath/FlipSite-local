@@ -543,6 +543,24 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
    />
   </Field>
 
+  <div className="flex flex-col justify-end">
+   {form.status === 'sold' ? (
+   <div className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border-base px-4 text-sm font-semibold text-muted">
+    <CircleCheck className="h-4 w-4" aria-hidden="true" />
+    {form.sold_at ? `Sold on ${form.sold_at}` : 'Marked as sold'}
+   </div>
+   ) : (
+   <button
+    type="button"
+    className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border-base px-4 text-sm font-semibold text-base transition hover:bg-surface-2"
+    onClick={markAsSold}
+   >
+    <CircleCheck className="h-4 w-4" aria-hidden="true" />
+    Mark as Sold
+   </button>
+   )}
+  </div>
+
   {showSellFields ? (
    <Field label="Sell Price" required={form.status === 'sold'}>
    <input
@@ -574,24 +592,6 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
   ) : null}
 
   <div className="grid gap-4 sm:grid-cols-2">
-  <div className="sm:col-span-2">
-   {form.status === 'sold' ? (
-   <div className="inline-flex items-center gap-2 rounded-lg border border-positive/20 bg-positive/10 px-3 py-2 text-sm font-semibold text-positive">
-    <CircleCheck className="h-4 w-4" aria-hidden="true" />
-    {form.sold_at ? `Sold on ${form.sold_at}` : 'Marked as sold'}
-   </div>
-   ) : (
-   <button
-    type="button"
-    className="inline-flex items-center gap-2 rounded-lg border border-positive/30 bg-positive/10 px-3 py-2 text-sm font-semibold text-positive transition hover:bg-positive/15"
-    onClick={markAsSold}
-   >
-    <CircleCheck className="h-4 w-4" aria-hidden="true" />
-    Mark as Sold
-   </button>
-   )}
-  </div>
-
   <Field label="Status">
    <select
    className={inputClassName + ' pr-10'}
@@ -807,7 +807,7 @@ function PendingItemFilesSection({
   ) : (
   <Upload className="h-4 w-4" aria-hidden="true" />
   )}
-  {isUploading ? 'Uploading...' : 'Add Files'}
+  {isUploading ? 'Uploading...' : 'Upload'}
   </button>
  </div>
 
@@ -1063,7 +1063,7 @@ function ItemFilesSection({ itemId }: { itemId: string }) {
   ) : (
   <Upload className="h-4 w-4" aria-hidden="true" />
   )}
-  {isUploading ? 'Uploading...' : 'Upload Files'}
+  {isUploading ? 'Uploading...' : 'Upload'}
   </button>
  </div>
 
