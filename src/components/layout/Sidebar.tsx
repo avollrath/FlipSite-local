@@ -7,12 +7,12 @@ import {
  Gauge,
  LogOut,
  Package,
- RefreshCw,
  Settings,
  Tags,
 } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { toast } from 'sonner'
+import flipsiteIconUrl from '@/assets/flipsite_icon.svg'
 import { Logo } from '@/components/ui/Logo'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { useAuth } from '@/hooks/useAuth'
@@ -64,8 +64,15 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
  <div className={`flex items-center justify-center transition-all duration-200 ease-out ${collapsed ? 'px-0 py-3' : 'px-4 py-6'}`}>
   {!collapsed && <Logo size={38} />}
   {collapsed && (
-   <div className="grid w-10 h-10 rounded-lg place-items-center bg-sidebar-accent/20">
-    <RefreshCw className="w-6 h-6 text-sidebar-accent" strokeWidth={3} />
+   <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-accent/70 to-accent shadow-lg shadow-accent/20">
+    <span
+    aria-hidden="true"
+    className="h-6 w-5 bg-white"
+    style={{
+     mask: `url(${flipsiteIconUrl}) center / contain no-repeat`,
+     WebkitMask: `url(${flipsiteIconUrl}) center / contain no-repeat`,
+    }}
+    />
    </div>
   )}
  </div>
