@@ -1,6 +1,5 @@
 import {
  ArrowRightLeft,
- BarChart3,
  CalendarRange,
  ChevronLeft,
  ChevronRight,
@@ -24,9 +23,8 @@ interface SidebarProps {
 }
 
 const navItems = [
- { label: 'Dashboard', href: '/dashboard', icon: Gauge },
  { label: 'Items', href: '/items', icon: Package },
- { label: 'Analytics', href: '/analytics', icon: BarChart3 },
+ { label: 'Dashboard', href: '/dashboard', icon: Gauge },
  { label: 'Period Report', href: '/report', icon: CalendarRange },
  { label: 'Categories', href: '/categories', icon: Tags },
  { label: 'Import / Export', href: '/import-export', icon: ArrowRightLeft },
@@ -61,7 +59,11 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
  </button>
 
- <div className={`flex items-center justify-center transition-all duration-200 ease-out ${collapsed ? 'px-0 py-3' : 'px-4 py-6'}`}>
+ <NavLink
+  to="/items"
+  className={`flex items-center justify-center transition-all duration-200 ease-out ${collapsed ? 'px-0 py-3' : 'px-4 py-6'}`}
+  aria-label="Go to items"
+ >
   {!collapsed && <Logo size={38} />}
   {collapsed && (
    <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-accent/70 to-accent shadow-lg shadow-accent/20">
@@ -75,7 +77,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
     />
    </div>
   )}
- </div>
+ </NavLink>
 
  <nav className={`space-y-2 transition-all duration-200 ease-out ${collapsed ? 'mt-6' : 'mt-10'}`}>
   {navItems.map(({ label, href, icon: Icon }) => {

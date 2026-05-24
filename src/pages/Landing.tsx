@@ -332,7 +332,7 @@ export function Landing() {
     try {
       await signIn(demoAccountEmail, 'demo1234')
       toast.success('Demo mode ready')
-      navigate('/dashboard', { replace: true })
+      navigate('/items', { replace: true })
     } catch (error) {
       if (import.meta.env.DEV) console.error(error)
       toast.error('Unable to start demo mode. Please try again.')

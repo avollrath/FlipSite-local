@@ -1,6 +1,5 @@
 import {
  ArrowRightLeft,
- BarChart3,
  CalendarRange,
  Gauge,
  Package,
@@ -10,9 +9,8 @@ import {
 import { NavLink } from 'react-router-dom'
 
 const navItems = [
- { label: 'Dashboard', href: '/dashboard', icon: Gauge },
  { label: 'Items', href: '/items', icon: Package },
- { label: 'Analytics', href: '/analytics', icon: BarChart3 },
+ { label: 'Dashboard', href: '/dashboard', icon: Gauge },
  { label: 'Report', href: '/report', icon: CalendarRange },
  { label: 'Categories', href: '/categories', icon: Tags },
  { label: 'Import', href: '/import-export', icon: ArrowRightLeft },
@@ -27,7 +25,7 @@ export function MobileNav() {
   <NavLink
   key={href}
   to={href}
-  end={href === '/dashboard'}
+  end={href === '/items' || href === '/dashboard'}
   className={({ isActive }) =>
    `flex flex-col items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition ${
    isActive

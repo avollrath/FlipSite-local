@@ -24,7 +24,7 @@ export function Login() {
 
  const destination =
  (location.state as { from?: { pathname?: string } } | null)?.from
- ?.pathname ?? '/dashboard'
+ ?.pathname ?? '/items'
  const features = [
  'Track what you own and what you have sold',
  'Bundle-aware profit calculations',

@@ -13,7 +13,6 @@ import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import { ThemeProvider } from '@/lib/theme'
 import { Analytics } from '@/pages/Analytics'
 import { Categories } from '@/pages/Categories'
-import { Dashboard } from '@/pages/Dashboard'
 import { ImportExport } from '@/pages/ImportExport'
 import { Items } from '@/pages/Items'
 import { Landing } from '@/pages/Landing'
@@ -46,7 +45,7 @@ function PublicHomeRoute() {
  }
 
  if (user) {
- return <Navigate to="/dashboard" replace />
+ return <Navigate to="/items" replace />
  }
 
  return <Landing />
@@ -84,10 +83,10 @@ function App() {
    <Route path="/login" element={<Login />} />
    <Route element={<ProtectedRoute />}>
    <Route element={<Layout />}>
-   <Route path="/dashboard" element={<Dashboard />} />
    <Route path="/items" element={<Items />} />
    <Route path="/items/:itemId" element={<Items />} />
-   <Route path="/analytics" element={<Analytics />} />
+   <Route path="/dashboard" element={<Analytics />} />
+   <Route path="/analytics" element={<Navigate to="/dashboard" replace />} />
    <Route path="/report" element={<PeriodReport />} />
    <Route path="/categories" element={<Categories />} />
    <Route path="/import-export" element={<ImportExport />} />

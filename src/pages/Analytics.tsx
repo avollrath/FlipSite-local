@@ -3,7 +3,11 @@ import {
   Banknote,
   Boxes,
   ChevronDown,
+  Crown,
   FilterX,
+  Heart,
+  Layers3,
+  Package,
   PackageSearch,
   Percent,
   TrendingDown,
@@ -47,14 +51,19 @@ import { toSupabaseTimestamp } from '@/lib/dateInput'
 import { formatMonthKey } from '@/lib/dateUtils'
 import { useTheme } from '@/lib/theme'
 import {
+  calculateItemProfit,
+  calculateItemROI,
+  calculateItemSellValue,
   formatCurrency,
   getBuyPlatform,
   getEffectiveItemStatus,
   getSellPlatform,
   isAggregateItem,
   isKeepingItem,
+  sumCurrency,
 } from '@/lib/utils'
 import type { Item } from '@/types'
+import { useNavigate } from 'react-router-dom'
 
 type DatePreset = 'all' | 'year' | '12m' | '6m' | '3m' | 'custom'
 type FilterStatus = 'sold' | 'holding' | 'listed' | 'keeper'
@@ -97,6 +106,7 @@ const statusOptions: Array<{ label: string; value: FilterStatus }> = [
 
 export function Analytics() {
   const { data: items = [], isLoading } = useItems()
+  const navigate = useNavigate()
   const { mode, theme } = useTheme()
   const colors = useMemo(() => {
     return getChartColors(theme, mode === 'dark')
@@ -137,6 +147,10 @@ export function Analytics() {
     [buyPlatforms, categories, dateRange, items, sellPlatforms, statuses],
   )
   const summary = useMemo(() => buildSummary(filteredItems), [filteredItems])
+  const dashboardSummary = useMemo(
+    () => buildDashboardSummary(filteredItems),
+    [filteredItems],
+  )
   const monthlyData = useMemo(() => buildMonthlyPerformance(filteredItems), [filteredItems])
   const profitByCategory = useMemo(() => buildProfitByCategory(filteredItems), [filteredItems])
   const profitByPlatform = useMemo(() => buildProfitByPlatform(filteredItems), [filteredItems])
@@ -168,10 +182,10 @@ export function Analytics() {
     <section className="space-y-6">
       <div>
         <h1 className="text-4xl font-semibold tracking-tight">
-          Performance
+          Dashboard
         </h1>
         <p className="mt-2 text-sm text-muted">
-          Performance by the numbers
+          Inventory and performance by the numbers
         </p>
       </div>
 
@@ -196,6 +210,101 @@ export function Analytics() {
         onSellPlatformsChange={setSellPlatforms}
         onStatusesChange={setStatuses}
       />
+
+      <SectionHeading>Inventory at a glance</SectionHeading>
+      <div className="grid gap-4 md:grid-cols-3">
+        <KPICard
+          title="Total Invested"
+          value={dashboardSummary.totalInvested}
+          subtitle="Purchase cost across flip inventory"
+          icon={Banknote}
+          trend="neutral"
+          color="violet"
+          formatter={formatCurrency}
+        />
+        <KPICard
+          title="Total Revenue"
+          value={dashboardSummary.totalRevenue}
+          subtitle="Sell price from sold items"
+          icon={TrendingUp}
+          trend={dashboardSummary.totalRevenue > 0 ? 'up' : 'neutral'}
+          color="indigo"
+          formatter={formatCurrency}
+        />
+        <KPICard
+          title="Total Profit"
+          value={dashboardSummary.totalProfit}
+          subtitle="Revenue minus sold item costs"
+          icon={Crown}
+          trend={profitTrend(dashboardSummary.totalProfit)}
+          color={dashboardSummary.totalProfit < 0 ? 'rose' : 'green'}
+          formatter={formatCurrency}
+        />
+        <KPICard
+          title="Avg ROI %"
+          value={dashboardSummary.avgRoi}
+          subtitle="Average return across sold items"
+          icon={Percent}
+          trend={profitTrend(dashboardSummary.avgRoi)}
+          color="blue"
+          formatter={(value) => `${value.toFixed(1)}%`}
+        />
+        <KPICard
+          title="Best Flip"
+          value={dashboardSummary.bestFlip?.name ?? 'No sales yet'}
+          subtitle={
+            dashboardSummary.bestFlip
+              ? `${dashboardSummary.bestFlip.roi.toFixed(1)}% ROI, ${formatCurrency(
+                dashboardSummary.bestFlip.profit,
+              )} profit`
+              : 'Sell an item to unlock this'
+          }
+          icon={Package}
+          trend={dashboardSummary.bestFlip ? 'up' : 'neutral'}
+          color="amber"
+          onClick={
+            dashboardSummary.bestFlip
+              ? () => navigate(`/items?item=${dashboardSummary.bestFlip?.tsid}`)
+              : undefined
+          }
+        />
+        <KPICard
+          title="In Inventory"
+          value={dashboardSummary.inventoryCount}
+          subtitle="Items held or listed for resale"
+          icon={Boxes}
+          trend="neutral"
+          color="violet"
+          onClick={() => navigate('/items?inventory=1')}
+        />
+        <KPICard
+          title="Keepers"
+          value={dashboardSummary.keeperCount}
+          subtitle="Items bought to keep"
+          icon={Heart}
+          trend="neutral"
+          color="indigo"
+          onClick={() => navigate('/items?status=keeper')}
+        />
+        <KPICard
+          title="Keeping Value"
+          value={dashboardSummary.keepingValue}
+          subtitle="Purchase value kept for yourself"
+          icon={Heart}
+          trend="neutral"
+          color="green"
+          formatter={formatCurrency}
+        />
+        <KPICard
+          title="Active Bundles"
+          value={dashboardSummary.activeBundles}
+          subtitle="Bundles with unsold child items"
+          icon={Layers3}
+          trend="neutral"
+          color="amber"
+          onClick={() => navigate('/items?bundles=active')}
+        />
+      </div>
 
       <SectionHeading>Performance by the numbers</SectionHeading>
       <div className="grid gap-4 md:grid-cols-3">
@@ -1037,6 +1146,89 @@ function profitTrend(value: number) {
   }
 
   return 'neutral'
+}
+
+function buildDashboardSummary(items: Item[]) {
+  const aggregateItems = items.filter(isAggregateItem)
+  const flippingItems = aggregateItems.filter((item) => !isKeepingItem(item))
+  const keepingItems = aggregateItems.filter((item) => isKeepingItem(item))
+  const soldItems = flippingItems.filter(
+    (item) => calculateItemSellValue(item, items) > 0,
+  )
+  const childrenByBundle = getChildrenByBundle(items)
+  const totalInvested = sumCurrency(flippingItems.map((item) => item.buy_price))
+  const totalRevenue = sumCurrency(
+    soldItems.map((item) => calculateItemSellValue(item, items)),
+  )
+  const totalProfit = sumCurrency(
+    soldItems.map((item) => calculateItemProfit(item, items)),
+  )
+  const keepingValue = sumCurrency(keepingItems.map((item) => item.buy_price))
+  const soldRois = soldItems
+    .map((item) => calculateItemROI(item, items))
+    .filter((roi): roi is number => roi !== null)
+  const avgRoi =
+    soldRois.length > 0
+      ? soldRois.reduce((sum, roi) => sum + roi, 0) / soldRois.length
+      : 0
+  const bestFlip = soldItems.reduce<{
+    name: string
+    profit: number
+    roi: number
+    tsid: string
+  } | null>((best, item) => {
+    const roi = calculateItemROI(item, items)
+    const profit = calculateItemProfit(item, items)
+
+    if (roi === null || profit === null) {
+      return best
+    }
+
+    if (!best || roi > best.roi) {
+      return { name: item.name, profit, roi, tsid: item.tsid }
+    }
+
+    return best
+  }, null)
+  const inventoryCount = flippingItems.filter((item) =>
+    ['holding', 'listed'].includes(getEffectiveItemStatus(item, items)),
+  ).length
+  const activeBundles = aggregateItems.filter((item) => {
+    if (!item.is_bundle_parent || isKeepingItem(item)) {
+      return false
+    }
+
+    return (childrenByBundle.get(item.tsid) ?? []).some(
+      (child) =>
+        !isKeepingItem(child) &&
+        getEffectiveItemStatus(child, items) !== 'sold',
+    )
+  }).length
+
+  return {
+    activeBundles,
+    avgRoi,
+    bestFlip,
+    inventoryCount,
+    keeperCount: keepingItems.length,
+    keepingValue,
+    totalInvested,
+    totalProfit,
+    totalRevenue,
+  }
+}
+
+function getChildrenByBundle(items: Item[]) {
+  return items.reduce((map, item) => {
+    if (!item.bundle_id) {
+      return map
+    }
+
+    const children = map.get(item.bundle_id) ?? []
+    children.push(item)
+    map.set(item.bundle_id, children)
+    return map
+  }, new Map<string, Item[]>())
 }
 
 function getFilteredCalculationItems(
