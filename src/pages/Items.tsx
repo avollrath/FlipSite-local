@@ -715,7 +715,7 @@ function ItemRow({
       }`}
       onClick={onEdit}
     >
-      <td className="px-4 py-4 text-base font-medium ">
+      <td className="px-4 py-4 align-middle text-base font-medium ">
         <div className={`flex items-center gap-2 ${isChild ? "pl-8" : ""}`}>
           {item.is_bundle_parent ? (
             <button
@@ -735,7 +735,14 @@ function ItemRow({
             </button>
           ) : null}
           {isChild ? (
-            <Link2 className="w-4 h-4 text-accent" aria-hidden="true" />
+            <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center">
+              <Link2
+                className="shrink-0 text-accent"
+                aria-hidden="true"
+                size={16}
+                strokeWidth={2}
+              />
+            </span>
           ) : null}
           <ItemThumbnail name={item.name} thumbnail={thumbnail} />
           <span>{item.name}</span>
