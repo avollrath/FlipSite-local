@@ -1300,13 +1300,13 @@ function StatusBadge({ status }: { status: ItemStatus }) {
 function getStatusBadgeClassName(status: ItemStatus) {
   return {
     holding:
-      "border border-blue-500 bg-blue-500 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950",
+      "border border-blue-500/40 bg-blue-500/80 text-white dark:border-blue-400/40 dark:bg-blue-400/80 dark:text-slate-950",
     listed:
-      "border border-amber-500 bg-amber-500 text-slate-950 dark:border-amber-400 dark:bg-amber-400",
+      "border border-amber-500/40 bg-amber-500/80 text-slate-950 dark:border-amber-400/40 dark:bg-amber-400/80",
     sold:
-      "border border-positive bg-positive text-accent-fg",
+      "border border-positive/40 bg-positive/80 text-accent-fg",
     keeper:
-      "border border-purple-500 bg-purple-500 text-white dark:border-purple-400 dark:bg-purple-400 dark:text-slate-950",
+      "border border-purple-500/40 bg-purple-500/80 text-white dark:border-purple-400/40 dark:bg-purple-400/80 dark:text-slate-950",
   }[status];
 }
 
