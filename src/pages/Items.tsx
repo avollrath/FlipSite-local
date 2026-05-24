@@ -33,11 +33,20 @@ import {
   formatDate,
   getBuyPlatform,
   getEffectiveItemStatus,
-  getItemPlatformSearchText,
   getSellPlatform,
   getStatusLabel,
   isKeepingItem,
 } from "@/lib/utils";
+import {
+  getActiveBundleIds,
+  getChildrenByBundle,
+  getVisibleItems,
+  getVisibleRows,
+  uniqueItemValues,
+  type BundleFilter,
+  type SortKey,
+  type SortState,
+} from "@/components/items/itemListModel";
 import type { Item, ItemStatus } from "@/types";
 
 type DrawerState =
@@ -45,27 +54,6 @@ type DrawerState =
   | { open: true; mode: "add"; item: null }
   | { open: true; mode: "edit"; item: Item };
 
-type SortKey =
-  | "name"
-  | "category"
-  | "condition"
-  | "buy_price"
-  | "sell_price"
-  | "profit"
-  | "roi"
-  | "buy_platform"
-  | "sell_platform"
-  | "status"
-  | "bought_at"
-  | "sold_at"
-  | "created_at";
-
-type SortState = {
-  key: SortKey;
-  direction: "asc" | "desc";
-};
-
-type BundleFilter = "none" | "only" | "active";
 type ViewMode = "list" | "gallery";
 
 const allStatuses = ["all", "holding", "listed", "sold", "keeper"] as const;
@@ -150,97 +138,40 @@ export function Items() {
   const [deleteTarget, setDeleteTarget] = useState<Item | null>(null);
 
   const buyPlatforms = useMemo(
-    () => uniqueValues(items.map((item) => getBuyPlatform(item))),
+    () => uniqueItemValues(items.map((item) => getBuyPlatform(item))),
     [items],
   );
   const categories = useMemo(
-    () => uniqueValues(items.map((item) => item.category)),
+    () => uniqueItemValues(items.map((item) => item.category)),
     [items],
   );
-  const childrenByBundle = useMemo(() => {
-    return items.reduce((map, item) => {
-      if (!item.bundle_id) {
-        return map;
-      }
-
-      const children = map.get(item.bundle_id) ?? [];
-      children.push(item);
-      map.set(item.bundle_id, children);
-      return map;
-    }, new Map<string, Item[]>());
-  }, [items]);
-  const activeBundleIds = useMemo(() => {
-    const activeIds = new Set<string>();
-
-    for (const [bundleId, children] of childrenByBundle) {
-      if (
-        children.some(
-          (child) => getEffectiveItemStatus(child, items) !== "sold",
-        )
-      ) {
-        activeIds.add(bundleId);
-      }
-    }
-
-    return activeIds;
-  }, [childrenByBundle, items]);
+  const childrenByBundle = useMemo(() => getChildrenByBundle(items), [items]);
+  const activeBundleIds = useMemo(
+    () => getActiveBundleIds(items, childrenByBundle),
+    [childrenByBundle, items],
+  );
 
   const visibleItems = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-
-    return items
-      .filter((item) => {
-        if (focusedItemId) {
-          return item.tsid === focusedItemId;
-        }
-
-        const effectiveStatus = getEffectiveItemStatus(item, items);
-        const matchesSearch =
-          !normalizedSearch ||
-          [
-            item.name,
-            item.category,
-            item.condition,
-            getItemPlatformSearchText(item),
-            effectiveStatus,
-            item.notes ?? "",
-          ]
-            .join(" ")
-            .toLowerCase()
-            .includes(normalizedSearch);
-
-        const matchesStatus =
-          statusFilter === "all" || effectiveStatus === statusFilter;
-        const matchesInventory =
-          !inventoryOnly ||
-          ["holding", "keeper", "listed"].includes(effectiveStatus);
-        const matchesBuyPlatform =
-          buyPlatformFilter === "all" ||
-          getBuyPlatform(item) === buyPlatformFilter;
-        const matchesCategory =
-          categoryFilter === "all" || item.category === categoryFilter;
-
-        const matchesBundleFilter =
-          bundleFilter === "none" ||
-          (bundleFilter === "only" && item.is_bundle_parent) ||
-          (bundleFilter === "active" &&
-            item.is_bundle_parent &&
-            activeBundleIds.has(item.tsid));
-
-        return (
-          matchesSearch &&
-          matchesStatus &&
-          matchesInventory &&
-          matchesBuyPlatform &&
-          matchesCategory &&
-          matchesBundleFilter
-        );
-      })
-      .sort((a, b) => compareItems(a, b, sort, items));
+    return getVisibleItems({
+      activeBundleIds,
+      childrenByBundle,
+      filters: {
+        bundleFilter,
+        buyPlatformFilter,
+        categoryFilter,
+        focusedItemId,
+        inventoryOnly,
+        search,
+        statusFilter,
+      },
+      items,
+      sort,
+    });
   }, [
     activeBundleIds,
     bundleFilter,
     categoryFilter,
+    childrenByBundle,
     focusedItemId,
     inventoryOnly,
     items,
@@ -251,42 +182,22 @@ export function Items() {
   ]);
 
   const visibleRows = useMemo(() => {
-    const rows: Array<{ item: Item; isChild: boolean }> = [];
-
-    if (focusedItemId) {
-      return visibleItems.map((item) => ({
-        item,
-        isChild: Boolean(item.bundle_id),
-      }));
-    }
-
-    if (
-      statusFilter !== "all" ||
-      inventoryOnly ||
-      buyPlatformFilter !== "all" ||
-      categoryFilter !== "all" ||
-      search.trim()
-    ) {
-      return visibleItems.map((item) => ({
-        item,
-        isChild: Boolean(item.bundle_id),
-      }));
-    }
-
-    visibleItems
-      .filter((item) => !item.bundle_id)
-      .forEach((item) => {
-        rows.push({ item, isChild: false });
-
-        if (item.is_bundle_parent && expandedBundles.has(item.tsid)) {
-          for (const child of childrenByBundle.get(item.tsid) ?? []) {
-            rows.push({ item: child, isChild: true });
-          }
-        }
-      });
-
-    return rows;
+    return getVisibleRows({
+      childrenByBundle,
+      expandedBundles,
+      filters: {
+        bundleFilter,
+        buyPlatformFilter,
+        categoryFilter,
+        focusedItemId,
+        inventoryOnly,
+        search,
+        statusFilter,
+      },
+      visibleItems,
+    });
   }, [
+    bundleFilter,
     categoryFilter,
     childrenByBundle,
     expandedBundles,
@@ -1428,62 +1339,6 @@ function NoResults() {
   );
 }
 
-function compareItems(a: Item, b: Item, sort: SortState, allItems: Item[]) {
-  const aValue = getSortValue(a, sort.key, allItems);
-  const bValue = getSortValue(b, sort.key, allItems);
-  const direction = sort.direction === "asc" ? 1 : -1;
-
-  if (typeof aValue === "number" && typeof bValue === "number") {
-    return (aValue - bValue) * direction;
-  }
-
-  return String(aValue).localeCompare(String(bValue)) * direction;
-}
-
-function getSortValue(item: Item, key: SortKey, allItems: Item[]) {
-  if (key === "profit") {
-    if (isKeepingItem(item)) {
-      return Number.NEGATIVE_INFINITY;
-    }
-
-    return calculateItemProfit(item, allItems) ?? Number.NEGATIVE_INFINITY;
-  }
-
-  if (key === "roi") {
-    if (isKeepingItem(item)) {
-      return Number.NEGATIVE_INFINITY;
-    }
-
-    return calculateItemROI(item, allItems) ?? Number.NEGATIVE_INFINITY;
-  }
-
-  if (key === "sell_price") {
-    if (isKeepingItem(item)) {
-      return 0;
-    }
-
-    return calculateItemSellValue(item, allItems);
-  }
-
-  if (key === "status") {
-    return getStatusLabel(getEffectiveItemStatus(item, allItems));
-  }
-
-  if (key === "buy_platform") {
-    return getBuyPlatform(item);
-  }
-
-  if (key === "sell_platform") {
-    return getSellPlatform(item);
-  }
-
-  if (key === "bought_at" || key === "sold_at") {
-    return item[key] ? new Date(item[key]).getTime() : 0;
-  }
-
-  return item[key] ?? "";
-}
-
 function metricCellClassName(value: number | null) {
   return `px-4 py-4 font-semibold ${metricTextClassName(value)}`;
 }
@@ -1496,12 +1351,6 @@ function metricTextClassName(value: number | null) {
   return value > 0
     ? "font-semibold text-positive "
     : "font-semibold text-negative ";
-}
-
-function uniqueValues(values: string[]) {
-  return Array.from(new Set(values.filter(Boolean))).sort((a, b) =>
-    a.localeCompare(b),
-  );
 }
 
 function getQueryStatus(value: string | null) {
