@@ -544,6 +544,7 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
    onChange={(event) =>
    updateField('buy_price', event.target.value)
    }
+   placeholder="0,00 €"
    required
    />
   </Field>
@@ -559,6 +560,7 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
    onChange={(event) =>
     updateField('sell_price', event.target.value)
    }
+   placeholder="0,00 €"
    required={form.status === 'sold'}
    />
    </Field>
@@ -1411,7 +1413,7 @@ function BundleItemsSection({
    onChange={(event) =>
    onUpdate(child.id, 'buy_price', event.target.value)
    }
-   placeholder="Split cost, optional"
+   placeholder="0,00 €"
    />
   </div>
   </div>
