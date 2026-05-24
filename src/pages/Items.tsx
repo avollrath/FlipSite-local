@@ -1299,10 +1299,14 @@ function StatusBadge({ status }: { status: ItemStatus }) {
 
 function getStatusBadgeClassName(status: ItemStatus) {
   return {
-    holding: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
-    listed: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-    sold: "bg-positive/15 text-positive",
-    keeper: "bg-purple-500/15 text-purple-600 dark:text-purple-400",
+    holding:
+      "border border-blue-500 bg-blue-500 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950",
+    listed:
+      "border border-amber-500 bg-amber-500 text-slate-950 dark:border-amber-400 dark:bg-amber-400",
+    sold:
+      "border border-positive bg-positive text-accent-fg",
+    keeper:
+      "border border-purple-500 bg-purple-500 text-white dark:border-purple-400 dark:bg-purple-400 dark:text-slate-950",
   }[status];
 }
 
