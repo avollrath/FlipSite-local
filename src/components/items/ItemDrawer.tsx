@@ -552,11 +552,11 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
    ) : (
    <button
     type="button"
-    className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border-base px-4 text-sm font-semibold text-base transition hover:bg-surface-2"
+    className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-accent-fg shadow-lg shadow-accent/20 transition hover:bg-accent/90"
     onClick={markAsSold}
    >
     <CircleCheck className="h-4 w-4" aria-hidden="true" />
-    Mark as Sold
+    Sold
    </button>
    )}
   </div>
