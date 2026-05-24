@@ -1173,7 +1173,7 @@ function GalleryCard({
       />
       {item.is_bundle_parent ? (
         <div className="absolute left-2 top-2">
-          <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/40 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+          <span className="inline-flex h-6 items-center gap-1 rounded-full border border-white/20 bg-black/40 px-2 text-[10px] font-semibold text-white backdrop-blur-sm">
             <Link2 className="h-3 w-3" aria-hidden="true" />
             Bundle
           </span>
@@ -1186,7 +1186,11 @@ function GalleryCard({
         </div>
       ) : null}
       <div className="absolute right-2 top-2">
-        <span className="rounded-full border border-white/20 bg-black/40 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+        <span
+          className={`inline-flex h-6 items-center rounded-full px-2 text-[10px] font-semibold ${getStatusBadgeClassName(
+            effectiveStatus,
+          )}`}
+        >
           {getStatusLabel(effectiveStatus)}
         </span>
       </div>
@@ -1282,20 +1286,24 @@ function FilterSelect({
 }
 
 function StatusBadge({ status }: { status: ItemStatus }) {
-  const className = {
+  return (
+    <span
+      className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusBadgeClassName(
+        status,
+      )}`}
+    >
+      {getStatusLabel(status)}
+    </span>
+  );
+}
+
+function getStatusBadgeClassName(status: ItemStatus) {
+  return {
     holding: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
     listed: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
     sold: "bg-positive/15 text-positive",
     keeper: "bg-purple-500/15 text-purple-600 dark:text-purple-400",
   }[status];
-
-  return (
-    <span
-      className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${className}`}
-    >
-      {getStatusLabel(status)}
-    </span>
-  );
 }
 
 function SortIcon({
