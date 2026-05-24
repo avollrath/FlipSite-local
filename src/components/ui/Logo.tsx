@@ -6,15 +6,22 @@ interface LogoProps {
 }
 
 export function Logo({ size = 44, className = '' }: LogoProps) {
-  const width = Math.round(size * (181 / 89))
+  const height = Math.round(size * 1.35)
+  const width = Math.round(height * (181 / 89))
 
   return (
-    <img
-      src={logoUrl}
-      alt="FlipSite"
-      width={width}
-      height={size}
+    <span
+      role="img"
+      aria-label="FlipSite"
       className={`flex-shrink-0 ${className}`}
+      style={{
+        width,
+        height,
+        background:
+          'linear-gradient(135deg, hsl(var(--accent) / 0.65), hsl(var(--accent)))',
+        mask: `url(${logoUrl}) center / contain no-repeat`,
+        WebkitMask: `url(${logoUrl}) center / contain no-repeat`,
+      }}
     />
   )
 }
