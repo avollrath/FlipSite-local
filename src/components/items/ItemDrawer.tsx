@@ -186,6 +186,7 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
  profit === null || !normalizedBuyPrice
  ? null
  : (profit / normalizedBuyPrice) * 100
+ const hasProfitPreview = profit !== null || roi !== null
  const isSubmitting =
  addItem.isPending ||
  addBundle.isPending ||
@@ -462,6 +463,7 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
 
  <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
   <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
+  {hasProfitPreview ? (
   <div className="rounded-lg border border-accent/30 bg-accent/10 p-4">
   <p className="text-sm font-medium text-accent ">
    Profit Preview
@@ -477,6 +479,7 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
    />
   </div>
   </div>
+  ) : null}
 
   <Field label="Name" required>
   <input
@@ -1245,11 +1248,15 @@ function getPreviewProfit({
  sellPrice: number | null
 }) {
  if (isBundle) {
- return (sellPrice ?? 0) + bundleChildSell - (buyPrice ?? 0)
+  if (buyPrice === null && sellPrice === null && bundleChildSell === 0) {
+   return null
+  }
+
+  return (sellPrice ?? 0) + bundleChildSell - (buyPrice ?? 0)
  }
 
  if (isBundleChild) {
- return sellPrice ?? 0
+  return sellPrice
  }
 
  return calcProfit(buyPrice, sellPrice)
