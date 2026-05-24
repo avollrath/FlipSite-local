@@ -119,7 +119,6 @@ export function Items() {
     (typeof allStatuses)[number]
   >(queryStatus ?? "all");
   const [buyPlatformFilter, setBuyPlatformFilter] = useState("all");
-  const [sellPlatformFilter, setSellPlatformFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [bundleFilter, setBundleFilter] =
     useState<BundleFilter>(queryBundleFilter);
@@ -142,10 +141,6 @@ export function Items() {
 
   const buyPlatforms = useMemo(
     () => uniqueValues(items.map((item) => getBuyPlatform(item))),
-    [items],
-  );
-  const sellPlatforms = useMemo(
-    () => uniqueValues(items.map((item) => getSellPlatform(item))),
     [items],
   );
   const categories = useMemo(
@@ -212,9 +207,6 @@ export function Items() {
         const matchesBuyPlatform =
           buyPlatformFilter === "all" ||
           getBuyPlatform(item) === buyPlatformFilter;
-        const matchesSellPlatform =
-          sellPlatformFilter === "all" ||
-          getSellPlatform(item) === sellPlatformFilter;
         const matchesCategory =
           categoryFilter === "all" || item.category === categoryFilter;
 
@@ -230,7 +222,6 @@ export function Items() {
           matchesStatus &&
           matchesInventory &&
           matchesBuyPlatform &&
-          matchesSellPlatform &&
           matchesCategory &&
           matchesBundleFilter
         );
@@ -245,7 +236,6 @@ export function Items() {
     items,
     buyPlatformFilter,
     search,
-    sellPlatformFilter,
     sort,
     statusFilter,
   ]);
@@ -264,7 +254,6 @@ export function Items() {
       statusFilter !== "all" ||
       inventoryOnly ||
       buyPlatformFilter !== "all" ||
-      sellPlatformFilter !== "all" ||
       categoryFilter !== "all" ||
       search.trim()
     ) {
@@ -295,7 +284,6 @@ export function Items() {
     inventoryOnly,
     buyPlatformFilter,
     search,
-    sellPlatformFilter,
     statusFilter,
     visibleItems,
   ]);
@@ -522,19 +510,6 @@ export function Items() {
             className="min-w-[150px] flex-[0_1_180px]"
           />
           <FilterSelect
-            label="Sold on"
-            value={sellPlatformFilter}
-            onChange={setSellPlatformFilter}
-            options={[
-              { value: "all", label: "All Channels" },
-              ...sellPlatforms.map((platform) => ({
-                value: platform,
-                label: platform,
-              })),
-            ]}
-            className="min-w-[150px] flex-[0_1_180px]"
-          />
-          <FilterSelect
             label="Category"
             value={categoryFilter}
             onChange={setCategoryFilter}
@@ -566,7 +541,7 @@ export function Items() {
                 checked={hasImage}
                 onChange={(event) => setHasImage(event.target.checked)}
               />
-              Has image
+              Image
             </label>
           ) : null}
           <label className="flex h-11 flex-[0_0_auto] items-center gap-2 whitespace-nowrap rounded-lg border border-layout bg-card px-3 text-sm font-medium text-base ">
@@ -1116,7 +1091,7 @@ function GalleryCard({
         src={thumbnail?.signed_url}
         alt={item.name}
         skeletonClassName="aspect-square w-full"
-        className="group-hover:scale-105"
+        className="transition-transform duration-500 ease-out group-hover:scale-105"
       />
       <div
         className="absolute inset-0 rounded-lg"
