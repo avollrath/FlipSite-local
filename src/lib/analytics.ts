@@ -4,9 +4,9 @@ import {
   calculateItemSellValue,
   getFlippingAggregateItems,
   getEffectiveItemStatus,
-  getKeepingAggregateItems,
+  getKeeperItems,
   getSoldAggregateItems,
-  getUnsoldResaleAggregateItems,
+  getUnsoldResaleItems,
   isAggregateItem,
   isKeepingItem,
 } from '@/lib/itemAccounting'
@@ -92,9 +92,9 @@ export type DashboardMetrics = {
 
 export function buildSummary(items: Item[]): AnalyticsSummary {
   const soldItems = getSoldAggregateItems(items)
-  const activeItems = getUnsoldResaleAggregateItems(items)
+  const activeItems = getUnsoldResaleItems(items)
   const soldStats = soldItems.map((item) => {
-    const profit = calculateItemProfit(item, items)
+    const profit = calculateItemProfit(item, items) ?? 0
     const roi = calculateItemROI(item, items) ?? 0
 
     return { item, profit, roi }
@@ -135,11 +135,11 @@ export function buildDashboardMetrics(items: Item[]): DashboardMetrics {
   // - unsold cash excludes keepers and bundle children, then uses buy price for holding/listed resale items.
   // - keeping value is buy price for aggregate items marked keeper/keeping.
   const soldItems = getSoldAggregateItems(items)
-  const unsoldItems = getUnsoldResaleAggregateItems(items)
-  const keepingItems = getKeepingAggregateItems(items)
+  const unsoldItems = getUnsoldResaleItems(items)
+  const keepingItems = getKeeperItems(items)
   const soldStats = soldItems.map((item) => ({
     item,
-    profit: calculateItemProfit(item, items),
+    profit: calculateItemProfit(item, items) ?? 0,
     revenue: calculateItemSellValue(item, items),
   }))
   const bestStat = soldStats.toSorted((a, b) => b.profit - a.profit)[0]
@@ -230,7 +230,7 @@ export function buildTopFlips(items: Item[], count = 8) {
   return getSoldAggregateItems(items)
     .map((item) => ({
       name: item.name,
-      profit: calculateItemProfit(item, items),
+      profit: calculateItemProfit(item, items) ?? 0,
     }))
     .sort((a, b) => b.profit - a.profit)
     .slice(0, count)
@@ -269,7 +269,7 @@ export function buildDurationProfit(items: Item[]): DurationProfitDatum[] {
       return {
         days: Math.max(0, Math.round((dateValue(soldAt) - dateValue(boughtAt)) / 86_400_000)),
         name: item.name,
-        profit: calculateItemProfit(item, items),
+        profit: calculateItemProfit(item, items) ?? 0,
       }
     })
     .filter((entry): entry is DurationProfitDatum => Boolean(entry))

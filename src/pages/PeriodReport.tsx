@@ -546,7 +546,7 @@ function ReportRow({
         {isKeeper ? '--' : formatCurrency(sellValue)}
       </td>
       <td className={cn('px-4 py-4 font-semibold', isKeeper ? 'text-muted' : metricTextClassName(profit))}>
-        {isKeeper ? '--' : formatCurrency(profit)}
+        {isKeeper || profit === null ? '--' : formatCurrency(profit)}
       </td>
       <td className={cn('px-4 py-4 font-semibold', isKeeper ? 'text-muted' : metricTextClassName(roi))}>
         {isKeeper || roi === null ? '--' : `${roi.toFixed(1)}%`}
@@ -653,7 +653,7 @@ function ReportCard({
         <MobileMetric
           label="Profit"
           tone={isKeeper ? null : profit}
-          value={isKeeper ? '--' : formatCurrency(profit)}
+          value={isKeeper || profit === null ? '--' : formatCurrency(profit)}
         />
         <MobileMetric
           label="ROI"
@@ -854,7 +854,9 @@ function buildSummary(
   const totalRevenue = sumCurrency(
     soldItems.map((item) => calculateItemSellValue(item, allItems)),
   )
-  const soldCost = sumCurrency(soldItems.map((item) => item.buy_price))
+  const totalProfit = sumCurrency(
+    soldItems.map((item) => calculateItemProfit(item, allItems)),
+  )
   const avgHoldDays = getAverageHoldDays(soldItems)
 
   return {
@@ -875,7 +877,7 @@ function buildSummary(
     sold: soldItems.length,
     stillHolding: stillHoldingItems.length,
     totalPaid: sumCurrency(boughtItems.map((item) => item.buy_price)),
-    totalProfit: totalRevenue - soldCost,
+    totalProfit,
     totalRevenue,
   }
 }

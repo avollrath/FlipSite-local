@@ -1,5 +1,12 @@
 import type { Item } from '@/types'
 
+// FlipSite accounting model:
+// - Standalone resale items own their buy price and sell price.
+// - Bundle parents own the purchase cost for the whole bundle.
+// - Bundle children are revenue allocation/detail records only.
+// - Aggregate reporting uses bundle parents and standalone rows, never bundle children.
+// - Keeper/keeping items are excluded from resale profit and ROI.
+
 export function calculateItemSellValue(item: Item, allItems: Item[]) {
   if (isKeepingItem(item)) {
     return 0
@@ -26,10 +33,7 @@ export function calculateItemProfit(item: Item, allItems: Item[]) {
   }
 
   if (item.bundle_id) {
-    // TODO(accounting): product decision needed. Current UI treats child profit as
-    // child sell value because the parent owns bundle cost basis. Child ROI below
-    // still uses split cost, so child profit and ROI intentionally differ for now.
-    return item.sell_price ?? 0
+    return null
   }
 
   return (item.sell_price ?? 0) - (item.buy_price ?? 0)
@@ -41,16 +45,16 @@ export function calculateItemROI(item: Item, allItems: Item[]) {
   }
 
   if (item.bundle_id && !item.is_bundle_parent) {
-    return item.buy_price > 0
-      ? ((item.sell_price ?? 0) - item.buy_price) / item.buy_price * 100
-      : null
+    return null
   }
 
   if (!item.buy_price) {
     return null
   }
 
-  return (calculateItemProfit(item, allItems) / item.buy_price) * 100
+  const profit = calculateItemProfit(item, allItems)
+
+  return profit === null ? null : (profit / item.buy_price) * 100
 }
 
 export function isAggregateItem(item: Item) {
@@ -91,13 +95,28 @@ export function getBundleChildren(item: Item, allItems: Item[]) {
   return allItems.filter((child) => child.bundle_id === item.tsid)
 }
 
+export function getBundleChildrenByParent(items: Item[]) {
+  return items.reduce((map, item) => {
+    if (!item.bundle_id) {
+      return map
+    }
+
+    const children = map.get(item.bundle_id) ?? []
+    children.push(item)
+    map.set(item.bundle_id, children)
+    return map
+  }, new Map<string, Item[]>())
+}
+
 export function getFlippingAggregateItems(items: Item[]) {
   return items.filter(isAggregateItem).filter((item) => !isKeepingItem(item))
 }
 
-export function getKeepingAggregateItems(items: Item[]) {
+export function getKeeperItems(items: Item[]) {
   return items.filter(isAggregateItem).filter(isKeepingItem)
 }
+
+export const getKeepingAggregateItems = getKeeperItems
 
 export function getSoldAggregateItems(items: Item[]) {
   return getFlippingAggregateItems(items).filter(
@@ -107,8 +126,10 @@ export function getSoldAggregateItems(items: Item[]) {
   )
 }
 
-export function getUnsoldResaleAggregateItems(items: Item[]) {
+export function getUnsoldResaleItems(items: Item[]) {
   return getFlippingAggregateItems(items).filter((item) =>
     ['holding', 'listed'].includes(getEffectiveItemStatus(item, items)),
   )
 }
+
+export const getUnsoldResaleAggregateItems = getUnsoldResaleItems

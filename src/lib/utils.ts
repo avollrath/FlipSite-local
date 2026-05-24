@@ -5,9 +5,13 @@ export {
   calculateItemProfit,
   calculateItemROI,
   calculateItemSellValue,
+  getBundleChildrenByParent,
   getEffectiveItemStatus,
+  getKeeperItems,
   isAggregateItem,
   isKeepingItem,
+  getSoldAggregateItems,
+  getUnsoldResaleItems,
 } from '@/lib/itemAccounting'
 
 export function cn(...classes: Array<string | false | null | undefined>) {
