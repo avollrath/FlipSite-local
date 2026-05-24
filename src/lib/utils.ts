@@ -1,6 +1,15 @@
 import { format } from 'date-fns'
 import type { Item, ItemStatus } from '@/types'
 
+export {
+  calculateItemProfit,
+  calculateItemROI,
+  calculateItemSellValue,
+  getEffectiveItemStatus,
+  isAggregateItem,
+  isKeepingItem,
+} from '@/lib/itemAccounting'
+
 export function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ')
 }
@@ -59,72 +68,6 @@ export function parseMoneyInput(value: string) {
   return Number.isFinite(parsed) ? parsed : null
 }
 
-export function calculateItemSellValue(item: Item, allItems: Item[]) {
-  if (isKeepingItem(item)) {
-    return 0
-  }
-
-  if (item.is_bundle_parent) {
-    const childrenSell = allItems
-      .filter((child) => child.bundle_id === item.tsid && !isKeepingItem(child))
-      .reduce((sum, child) => sum + (child.sell_price ?? 0), 0)
-
-    return (item.sell_price ?? 0) + childrenSell
-  }
-
-  return item.sell_price ?? 0
-}
-
-export function calculateItemProfit(item: Item, allItems: Item[]) {
-  if (isKeepingItem(item)) {
-    return 0
-  }
-
-  if (item.is_bundle_parent) {
-    return calculateItemSellValue(item, allItems) - (item.buy_price ?? 0)
-  }
-
-  if (item.bundle_id) {
-    return item.sell_price ?? 0
-  }
-
-  return (item.sell_price ?? 0) - (item.buy_price ?? 0)
-}
-
-export function calculateItemROI(item: Item, allItems: Item[]) {
-  if (isKeepingItem(item)) {
-    return null
-  }
-
-  if (item.bundle_id && !item.is_bundle_parent) {
-    return item.buy_price > 0
-      ? ((item.sell_price ?? 0) - item.buy_price) / item.buy_price * 100
-      : null
-  }
-
-  if (!item.buy_price) {
-    return null
-  }
-
-  return (calculateItemProfit(item, allItems) / item.buy_price) * 100
-}
-
-export function isAggregateItem(item: Item) {
-  return !item.bundle_id || Boolean(item.is_bundle_parent)
-}
-
-export function isKeepingItem(item: Item) {
-  const status = String(item.status).trim().toLowerCase()
-  const category = item.category.trim().toLowerCase()
-
-  return (
-    status === 'keeper' ||
-    status === 'keeping' ||
-    category === 'keeper' ||
-    category === 'keeping'
-  )
-}
-
 export function getBuyPlatform(item: Item) {
   return item.buy_platform ?? item.platform ?? ''
 }
@@ -135,24 +78,6 @@ export function getSellPlatform(item: Item) {
 
 export function getItemPlatformSearchText(item: Item) {
   return [getBuyPlatform(item), getSellPlatform(item)].filter(Boolean).join(' ')
-}
-
-export function getEffectiveItemStatus(item: Item, allItems: Item[]) {
-  if (!item.is_bundle_parent) {
-    return isKeepingItem(item) ? 'keeper' : item.status
-  }
-
-  if (isKeepingItem(item)) {
-    return 'keeper'
-  }
-
-  const children = allItems.filter((child) => child.bundle_id === item.tsid)
-
-  if (children.length > 0 && children.every((child) => child.status === 'sold')) {
-    return 'sold'
-  }
-
-  return item.status
 }
 
 export function formatDate(dateString: string | null | undefined) {
