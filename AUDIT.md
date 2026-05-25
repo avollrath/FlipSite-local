@@ -47,6 +47,32 @@ This section records the cleanup/refactor phase completed after the original aud
 
 Stop architecture cleanup here and resume normal feature work. Next maintenance pass should be scoped to one concrete goal, preferably strict-mode preparation, generated Supabase types, or storage consistency.
 
+## Current Risks
+
+These are the active risks after the cleanup/refactor phase. They supersede the older risk lists in the original audit snapshot below.
+
+### Critical
+
+- **Multi-step client mutations are still not transactional.** CSV import, category updates, bundle saves, bundle parent status sync, and storage deletes can partially fail because they run as client-side sequences.
+- **Storage deletion can leave inconsistent state.** `deleteItemFile` removes the storage object first, then deletes the DB row. If DB deletion fails, the DB can point at a missing object.
+- **Demo-mode write blocking is client-side convenience.** Real protection still depends on Supabase auth/RLS; client-only demo guards are not a security boundary.
+
+### Medium
+
+- **Full TypeScript strict mode remains deferred.** Supabase response typing improved, but `strict`, `strictNullChecks`, `noUncheckedIndexedAccess`, and generated Supabase types are still future work.
+- **Large inventories still need a scale strategy.** The app fetches all items for major views and renders full filtered result sets. Pagination, virtualization, or server-side filtering should wait until real inventory size justifies it.
+- **Analytics remains the largest async route chunk.** Route lazy loading fixed initial bundle size, but the dashboard/chart route is still heavy because of Recharts and chart UI.
+- **Some historical helper exports remain.** Compatibility exports should only be removed after caller verification.
+
+### Low
+
+- **Docs/assets cleanup remains separate.** Screenshots, design files, CSV/XLSX artifacts, and older assets still need a content pass.
+- **UI terminology still deserves polish.** Status/filter language is better centralized than before, but "inventory", "holding", "keeping", and "keeper" can still be confusing.
+
+## Original Audit Snapshot
+
+Historical findings from the initial audit are preserved below for context. Some items were resolved during the cleanup phase documented in **Post-audit status** and should not be treated as current repo state without re-verifying.
+
 ## Biggest Risks
 
 ### Critical
