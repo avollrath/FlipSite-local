@@ -18,9 +18,9 @@
 **Routing structure:**
 - `/` – Landing page (public)
 - `/login` – Authentication page
-- `/dashboard` – Main inventory overview with KPIs and charts
+- `/dashboard` – Main dashboard with filters, snapshot KPIs, attention cards, and charts
 - `/items` – Item list and detail view (with `/:itemId` param)
-- `/analytics` – Detailed analytics and performance metrics
+- `/analytics` – Redirects to `/dashboard`
 - `/report` – Period/date range reports
 - `/categories` – Category management
 - `/import-export` – CSV import/export functionality
@@ -37,7 +37,7 @@
 - **Position:** Fixed, full height, left-aligned, hidden on mobile (md: flex)
 - **Background:** `--sidebar-bg` CSS variable (theme-dependent)
 - **Padding:** 1.25rem (p-5)
-- **Navigation items:** 7 items (Dashboard, Items, Analytics, Period Report, Categories, Import/Export, Settings)
+- **Navigation items:** 6 items (Items, Dashboard, Period Report, Categories, Import/Export, Settings)
 - **Icons used:** Lucide React icons (Gauge, Package, BarChart3, CalendarRange, Tags, ArrowRightLeft, Settings, LogOut)
 - **Active state behavior:** 
   - Active: `bg-accent/25`, `text-sidebar-accent`, bold font

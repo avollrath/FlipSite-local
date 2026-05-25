@@ -9,7 +9,7 @@
 I built this because I was maintaining a spreadsheet to track my flips and it kept breaking in ways spreadsheets break — bundle math fell apart, receipts lived in email, photos were nowhere, and the profit numbers were always slightly wrong. FlipSite replaced the spreadsheet. Now I use it every day.
 
 ![Dashboard](src/assets/dashboard.jpg)
-*Nine KPI cards, four charts. Keeper items are tracked separately so they don't pollute resale numbers.*
+*Snapshot cards, attention prompts, and trend charts. Keeper items are tracked separately so they don't pollute resale numbers.*
 
 <table>
 <tr>
@@ -57,11 +57,11 @@ Four statuses: **holding**, **listed**, **sold**, **keeping**. Keeping items are
 
 Bundles let you buy a collection for one price and sell the pieces separately. Each child item tracks its own sale while the bundle correctly accounts for what the original purchase cost. The math that spreadsheets handle badly.
 
-## Analytics
+## Dashboard and reports
 
-A deeper look at a specific period or platform. Date range and multi-select filters affect every number on the page — useful for asking things like "how did I do on camera gear last quarter" or "which platform is actually worth the fees." The hold time vs profit scatter shows whether flipping fast or sitting on things is working better for you. Cumulative profit vs a linear pace line makes it immediately obvious if your returns are accelerating or leveling off.
+Dashboard combines the main snapshot with trend charts and filters. Period Report gives a focused date range view for asking things like "how did I do on camera gear last quarter" or "which platform is actually working best." Bundle children stay visible as revenue detail while profit and ROI roll up to the parent bundle.
 
-![Analytics](src/assets/analytics.jpg)
+![Dashboard trends](src/assets/analytics.jpg)
 
 ## Settings
 
@@ -87,6 +87,15 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 Create a Supabase project, enable Email/Password auth, and run `supabase/schema.sql` in the SQL editor.
+
+Useful checks:
+
+```bash
+npm run lint
+npm test
+npm run typecheck
+npm run build
+```
 
 ## Demo
 
