@@ -2,9 +2,9 @@
 
 ## Executive Summary
 
-FlipSite is a functional, coherent React/Supabase app with a clear product center: items, resale status, bundles, files, and profit visibility. The recent dashboard simplification improved the product direction, but the repo still shows many signs of organic iteration: very large page files, duplicated business rules, stale analytics helpers, mixed UI patterns, and accounting semantics spread across views.
+FlipSite is now a well-structured React/Supabase app with a clear product center: items, resale status, bundles, files, and profit visibility. The post-audit cleanup centralized accounting semantics, added shared item indexing, split the largest item/report surfaces, introduced route-level code splitting, and reduced the regression surface compared to the original audit state.
 
-Overall health: **medium**. The app builds, lints, and has a small useful test suite, but future changes are likely to regress business logic because bundle, keeping, profit, date, and filter rules are duplicated across `src/lib/utils.ts`, `src/lib/analytics.ts`, `src/pages/Items.tsx`, `src/pages/PeriodReport.tsx`, and `src/components/items/ItemDrawer.tsx`.
+Overall health: **good for a production-quality side project**. The app builds, lints, typechecks, and has fixture-driven tests around the highest-risk accounting/list/report logic. Remaining risks are mostly around transactional mutations, future scale strategy, heavier analytics chunks, and deferred strict typing.
 
 Latest validation run:
 
@@ -186,7 +186,9 @@ Historical findings from the initial audit are preserved below for context. Some
 - Formatting is inconsistent: some files use semicolons/double quotes (`Items.tsx`, `Layout.tsx`), others use no semicolons/single quotes. No formatter script exists.
 - `README.md` and comments contain mojibake in terminal output. This may be console encoding, but if source bytes are corrupted it should be fixed separately.
 
-## Technical Debt Hotspots
+## Historical Technical Debt Hotspots
+
+These were the main hotspots in the original audit. Several have since been reduced by extraction work, but the list is preserved to explain why the cleanup phase prioritized these areas.
 
 1. `src/components/items/ItemDrawer.tsx`
    - Too many responsibilities.
