@@ -397,10 +397,9 @@ export function Items() {
           </div>
         </div>
 
-        <div className="rounded-xl bg-card p-3 shadow-sm">
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-              <label className="relative block min-w-0 flex-1">
+        <div className="rounded-xl bg-card px-3 py-2 shadow-sm">
+          <div className="flex flex-col gap-2 xl:flex-row xl:items-center">
+            <label className="relative block min-w-0 xl:w-[360px] xl:flex-none 2xl:w-[420px]">
                 <Search
                   className="absolute w-4 h-4 -translate-y-1/2 pointer-events-none left-3 top-1/2 text-muted"
                   aria-hidden="true"
@@ -413,7 +412,7 @@ export function Items() {
                 />
               </label>
 
-              <div className="flex flex-col gap-2 sm:flex-row lg:flex-[0_0_auto]">
+            <div className="flex flex-col gap-2 sm:flex-row xl:flex-none">
                 <FilterSelect
                   label="Status"
                   value={statusFilter}
@@ -424,7 +423,7 @@ export function Items() {
                     value: status,
                     label: status === "all" ? "Any status" : getStatusLabel(status),
                   }))}
-                  className="sm:w-40"
+                  className="sm:w-36"
                 />
                 <FilterSelect
                   label="Category"
@@ -437,31 +436,28 @@ export function Items() {
                       label: category,
                     })),
                   ]}
-                  className="sm:w-48"
+                  className="sm:w-40"
+                />
+                <FilterSelect
+                  label="Source"
+                  value={buyPlatformFilter}
+                  onChange={setBuyPlatformFilter}
+                  options={[
+                    { value: "all", label: "Any source" },
+                    ...buyPlatforms.map((platform) => ({
+                      value: platform,
+                      label: platform,
+                    })),
+                  ]}
+                  className="sm:w-40"
                 />
                 <BrowseSortControl
                   value={browseSortValue}
                   onChange={updateBrowseSort}
                 />
-                <ViewToggle value={viewMode} onChange={updateViewMode} />
               </div>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <FilterSelect
-                label="Source"
-                value={buyPlatformFilter}
-                onChange={setBuyPlatformFilter}
-                options={[
-                  { value: "all", label: "Any source" },
-                  ...buyPlatforms.map((platform) => ({
-                    value: platform,
-                    label: platform,
-                  })),
-                ]}
-                className="w-full sm:w-44"
-                variant="soft"
-              />
+            <div className="flex flex-wrap items-center gap-1.5 xl:flex-nowrap">
               <ToggleChip
                 active={inventoryOnly}
                 label="Inventory"
@@ -481,6 +477,7 @@ export function Items() {
                   onToggle={() => setHasImage((current) => !current)}
                 />
               ) : null}
+              <ViewToggle value={viewMode} onChange={updateViewMode} />
             </div>
           </div>
         </div>
@@ -653,7 +650,7 @@ function BrowseSortControl({
   value: string;
 }) {
   return (
-    <label className="block sm:w-44">
+    <label className="block sm:w-40">
       <span className="sr-only">Sort items</span>
       <select
         className={selectControlClassName}
@@ -718,10 +715,10 @@ function ToggleChip({
     <button
       type="button"
       className={cn(
-        "inline-flex h-9 items-center justify-center rounded-full px-3 text-sm font-semibold transition focus:outline-none focus:ring-4 focus:ring-accent/15",
+        "inline-flex h-9 items-center justify-center rounded-full border px-2.5 text-sm font-medium transition focus:outline-none focus:ring-4 focus:ring-accent/15",
         active
-          ? "bg-accent/10 text-accent ring-1 ring-accent/20"
-          : "bg-surface-2 text-muted hover:bg-accent/10 hover:text-accent",
+          ? "border-accent/35 bg-accent/10 text-accent"
+          : "border-border-base bg-card text-muted hover:border-accent/30 hover:bg-accent/5 hover:text-accent",
       )}
       onClick={onToggle}
       aria-pressed={active}
@@ -829,9 +826,9 @@ function getGalleryCardSize() {
 }
 
 const controlClassName =
-  "h-11 w-full min-w-0 rounded-lg border border-border-base bg-card px-3 text-sm text-base outline-none transition placeholder:text-muted focus:border-accent focus:ring-4 focus:ring-accent/10 ";
+  "h-9 w-full min-w-0 rounded-lg border border-border-base bg-card px-2.5 text-sm text-base outline-none transition placeholder:text-muted hover:border-accent/30 focus:border-accent focus:ring-4 focus:ring-accent/10 ";
 const selectControlClassName = controlClassName + " pr-10";
 const searchControlClassName =
-  "h-12 w-full min-w-0 rounded-xl border border-border-base bg-card px-4 pl-10 text-base text-base outline-none transition placeholder:text-muted hover:border-accent/40 hover:bg-card focus:border-accent focus:bg-card focus:ring-4 focus:ring-accent/10";
+  "h-9 w-full min-w-0 rounded-lg border border-border-base bg-card px-3 pl-9 text-sm text-base outline-none transition placeholder:text-muted hover:border-accent/35 focus:border-accent focus:bg-card focus:ring-4 focus:ring-accent/10";
 const softSelectControlClassName =
   "h-9 w-full min-w-0 rounded-full border border-transparent bg-surface-2 px-3 pr-9 text-sm font-semibold text-muted outline-none transition hover:bg-accent/10 hover:text-accent focus:border-accent focus:bg-card focus:ring-4 focus:ring-accent/10";
