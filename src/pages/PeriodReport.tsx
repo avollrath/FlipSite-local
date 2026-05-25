@@ -1,3 +1,11 @@
+import {
+  Banknote,
+  Boxes,
+  Heart,
+  TrendingDown,
+  TrendingUp,
+  WalletCards,
+} from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -7,6 +15,9 @@ import {
   getFirstItemImageThumbnails,
   type ItemImageThumbnail,
 } from '@/lib/itemFiles'
+import {
+  calculateItemProfit,
+} from '@/lib/itemAccounting'
 import {
   cn,
   formatCurrency,
@@ -111,6 +122,10 @@ export function PeriodReport() {
         sortTouched,
       }),
     [items, periodItems, range, sort, sortTouched],
+  )
+  const biggestLoss = useMemo(
+    () => getBiggestLoss(soldItems, items),
+    [items, soldItems],
   )
   const visibleRows = useMemo(
     () => [
@@ -223,9 +238,8 @@ export function PeriodReport() {
         ) : null}
       </div>
 
-      <div className="mb-6">
-        <SummaryBar summary={summary} />
-      </div>
+      <ActivitySummary summary={summary} />
+      <Highlights summary={summary} biggestLoss={biggestLoss} />
 
       {periodItems.length === 0 ? (
         <EmptyState />
@@ -254,104 +268,181 @@ export function PeriodReport() {
   )
 }
 
-function SummaryBar({ summary }: { summary: ReportSummary }) {
-  const resaleCards = [
-    { label: 'Purchased', value: String(summary.purchased) },
-    { label: 'Sold', value: String(summary.sold) },
-    { label: 'Paid', value: formatCurrency(summary.totalPaid) },
-    { label: 'Revenue', value: formatCurrency(summary.totalRevenue) },
-    {
-      label: 'Profit',
-      value: formatCurrency(summary.totalProfit),
-      valueClassName: metricTextClassName(summary.totalProfit),
-    },
-    {
-      label: 'Avg ROI',
-      value: summary.avgROI === null ? '--' : `${summary.avgROI.toFixed(1)}%`,
-      valueClassName: metricTextClassName(summary.avgROI),
-    },
-    {
-      label: 'Best Flip',
-      sub: summary.bestFlipProfit ? `${summary.bestFlipProfit} profit` : undefined,
-      value: summary.bestFlip,
-    },
-  ]
-  const inventoryCards = [
-    { label: 'Kept', value: String(summary.kept) },
-    {
-      label: 'Keeping Spend',
-      value: formatCurrency(summary.keepingSpend),
-      valueClassName: 'text-base',
-    },
-    { label: 'Still Holding', value: String(summary.stillHolding) },
-    { label: 'Holding Value', value: formatCurrency(summary.holdingValue) },
-    { label: 'Avg Hold Time', value: summary.avgHoldTime },
-  ]
-
+function ActivitySummary({ summary }: { summary: ReportSummary }) {
   return (
-    <div className="space-y-3">
-      <div>
-        <p className="mb-2 text-[11px] font-medium uppercase tracking-widest text-muted">
-          Resale Activity
-        </p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-          {resaleCards.map((kpi) => (
-            <SummaryCard key={kpi.label} {...kpi} />
-          ))}
-        </div>
-      </div>
+    <section className="mb-6 grid gap-3 lg:grid-cols-[1.35fr_1fr_1fr_1fr]">
+      <SummaryCard
+        hero={summary.sold > 0}
+        icon={Banknote}
+        label="Profit"
+        value={formatCurrency(summary.totalProfit)}
+        helper="Revenue minus resale purchase costs"
+        valueClassName={metricTextClassName(summary.totalProfit)}
+      />
+      <SummaryCard
+        icon={TrendingUp}
+        label="Revenue"
+        value={formatCurrency(summary.totalRevenue)}
+        helper="Money received from sold items"
+      />
+      <SummaryCard
+        icon={WalletCards}
+        label="Cash spent"
+        value={formatCurrency(summary.totalPaid)}
+        helper="Purchase cost of items bought in this period"
+      />
+      <SummaryCard
+        icon={Boxes}
+        label="Activity"
+        value={`${summary.purchased} bought`}
+        helper={`Sold ${summary.sold} · Kept ${summary.kept}`}
+      />
+    </section>
+  )
+}
 
-      <div>
-        <p className="mb-2 text-[11px] font-medium uppercase tracking-widest text-muted">
-          Inventory & Keeping
-        </p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {inventoryCards.map((kpi) => (
-            <SummaryCard key={kpi.label} {...kpi} />
-          ))}
-        </div>
+function Highlights({
+  biggestLoss,
+  summary,
+}: {
+  biggestLoss: { name: string; profit: number } | null
+  summary: ReportSummary
+}) {
+  return (
+    <section className="mb-6">
+      <h2 className="mb-3 text-xs font-medium uppercase tracking-widest text-muted">
+        Highlights
+      </h2>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <HighlightCard
+          icon={TrendingUp}
+          label="Best flip"
+          text={
+            summary.bestFlipProfit
+              ? `${summary.bestFlip}: +${summary.bestFlipProfit}`
+              : 'No profitable flip in this range yet'
+          }
+          tone="positive"
+        />
+        <HighlightCard
+          icon={TrendingDown}
+          label="Biggest loss"
+          text={
+            biggestLoss
+              ? `${biggestLoss.name}: ${formatCurrency(biggestLoss.profit)}`
+              : 'No loss-making flip in this range'
+          }
+          tone={biggestLoss ? 'negative' : 'neutral'}
+        />
+        <HighlightCard
+          icon={Boxes}
+          label="Still holding"
+          text={
+            summary.stillHolding > 0
+              ? `${summary.stillHolding} resale items still holding, ${formatCurrency(summary.holdingValue)} tied up`
+              : 'No new resale inventory still holding'
+          }
+        />
+        <HighlightCard
+          icon={Heart}
+          label="Keeping spend"
+          text={
+            summary.kept > 0
+              ? `${summary.kept} kept items, ${formatCurrency(summary.keepingSpend)} spent`
+              : 'No kept items bought in this range'
+          }
+        />
       </div>
-    </div>
+    </section>
   )
 }
 
 function SummaryCard({
+  helper,
+  hero = false,
+  icon: Icon,
   label,
-  sub,
   value,
   valueClassName,
 }: {
+  helper: string
+  hero?: boolean
+  icon: typeof Banknote
   label: string
-  sub?: string
   value: string
   valueClassName?: string
 }) {
   return (
-    <div className="relative overflow-hidden rounded-xl bg-card p-4">
+    <article
+      className={cn(
+        'relative overflow-hidden rounded-xl bg-card p-5 shadow-sm',
+        hero && 'ring-1 ring-accent/20',
+      )}
+    >
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(ellipse 80% 60% at 50% 0%, hsl(var(--accent) / 0.10) 0%, transparent 70%)',
+            'radial-gradient(ellipse 80% 60% at 50% 0%, hsl(var(--accent) / 0.12) 0%, transparent 70%)',
         }}
       />
       <div className="relative z-10">
-        <p className="truncate text-[11px] font-medium uppercase tracking-widest text-muted">
-          {label}
-        </p>
+        <div className="flex items-start justify-between gap-3">
+          <p className="truncate text-[11px] font-medium uppercase tracking-widest text-muted">
+            {label}
+          </p>
+          <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent/10 text-accent">
+            <Icon className="h-4 w-4" aria-hidden="true" />
+          </span>
+        </div>
         <p
-          className={cn('mt-1.5 truncate text-xl font-bold', valueClassName ?? 'text-base')}
+          className={cn(
+            'mt-3 truncate font-bold tracking-tight',
+            hero ? 'text-3xl' : 'text-2xl',
+            valueClassName ?? 'text-base',
+          )}
           title={value}
         >
           {value}
         </p>
-        {sub ? (
-          <p className="mt-0.5 truncate text-xs text-muted" title={sub}>
-            {sub}
-          </p>
-        ) : null}
+        <p className="mt-2 text-sm text-muted">{helper}</p>
       </div>
-    </div>
+    </article>
+  )
+}
+
+function HighlightCard({
+  icon: Icon,
+  label,
+  text,
+  tone = 'neutral',
+}: {
+  icon: typeof Banknote
+  label: string
+  text: string
+  tone?: 'positive' | 'negative' | 'neutral'
+}) {
+  return (
+    <article className="rounded-xl bg-card p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <span
+          className={cn(
+            'grid h-9 w-9 shrink-0 place-items-center rounded-lg',
+            tone === 'positive' && 'bg-positive/15 text-positive',
+            tone === 'negative' && 'bg-negative/15 text-negative',
+            tone === 'neutral' && 'bg-accent/10 text-accent',
+          )}
+        >
+          <Icon className="h-4 w-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-xs font-medium uppercase tracking-widest text-muted">
+            {label}
+          </p>
+          <p className="mt-1 text-sm font-medium leading-5 text-base">{text}</p>
+        </div>
+      </div>
+    </article>
   )
 }
 
@@ -394,6 +485,22 @@ function metricTextClassName(value?: number | null) {
   }
 
   return value > 0 ? 'font-semibold text-positive' : 'font-semibold text-negative'
+}
+
+function getBiggestLoss(soldItems: Item[], allItems: Item[]) {
+  return soldItems.reduce<{ name: string; profit: number } | null>((loss, item) => {
+    const profit = calculateItemProfit(item, allItems)
+
+    if (profit === null || profit >= 0) {
+      return loss
+    }
+
+    if (!loss || profit < loss.profit) {
+      return { name: item.name, profit }
+    }
+
+    return loss
+  }, null)
 }
 
 function getInitialPeriod(): Period {
