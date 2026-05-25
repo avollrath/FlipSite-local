@@ -6,7 +6,6 @@ import {
   Plus,
   Search,
   Trash2,
-  X,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -31,6 +30,7 @@ import {
 import { downloadItemCsv } from "@/components/items/itemCsvExport";
 import { ItemTable } from "@/components/items/ItemTable";
 import { ItemGallery } from "@/components/items/ItemGallery";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { createItemIndex } from "@/domain/items/itemIndex";
 import type { Item } from "@/types";
 
@@ -363,33 +363,6 @@ export function Items() {
   }
 
   const emptyAllItems = !isLoading && items.length === 0;
-  const activeFilterChips = getActiveFilterChips({
-    bundleFilter,
-    buyPlatformFilter,
-    categoryFilter,
-    hasImage: viewMode === "gallery" ? hasImage : false,
-    inventoryOnly,
-    search,
-    statusFilter,
-    onClearBundle: () => setBundleFilter("none"),
-    onClearCategory: () => setCategoryFilter("all"),
-    onClearImage: () => setHasImage(false),
-    onClearInventory: () => setInventoryOnly(false),
-    onClearSearch: () => setSearch(""),
-    onClearSource: () => setBuyPlatformFilter("all"),
-    onClearStatus: () => setStatusFilter("all"),
-  });
-  const hasActiveFilters = activeFilterChips.length > 0;
-
-  function clearAllFilters() {
-    setSearch("");
-    setStatusFilter("all");
-    setBuyPlatformFilter("all");
-    setCategoryFilter("all");
-    setBundleFilter("none");
-    setInventoryOnly(false);
-    setHasImage(false);
-  }
 
   return (
     <section ref={pageRef}>
@@ -509,13 +482,6 @@ export function Items() {
                 />
               ) : null}
             </div>
-
-            {hasActiveFilters ? (
-              <ActiveFilterRow
-                chips={activeFilterChips}
-                onClearAll={clearAllFilters}
-              />
-            ) : null}
           </div>
         </div>
       </div>
@@ -643,6 +609,7 @@ function ViewToggle({
 }) {
   return (
     <div className="flex flex-[0_0_auto] items-center gap-0.5 rounded-lg border border-layout bg-surface-2 p-1">
+      <Tooltip content="List view" side="top">
       <button
         type="button"
         className={cn(
@@ -652,12 +619,13 @@ function ViewToggle({
             : "text-muted hover:text-base",
         )}
         onClick={() => onChange("list")}
-        title="List view"
         aria-label="List view"
         aria-pressed={value === "list"}
       >
         <LayoutList className="w-4 h-4" aria-hidden="true" />
       </button>
+      </Tooltip>
+      <Tooltip content="Gallery view" side="top">
       <button
         type="button"
         className={cn(
@@ -667,12 +635,12 @@ function ViewToggle({
             : "text-muted hover:text-base",
         )}
         onClick={() => onChange("gallery")}
-        title="Gallery view"
         aria-label="Gallery view"
         aria-pressed={value === "gallery"}
       >
         <LayoutGrid className="w-4 h-4" aria-hidden="true" />
       </button>
+      </Tooltip>
     </div>
   );
 }
@@ -752,7 +720,7 @@ function ToggleChip({
       className={cn(
         "inline-flex h-9 items-center justify-center rounded-full px-3 text-sm font-semibold transition focus:outline-none focus:ring-4 focus:ring-accent/15",
         active
-          ? "bg-accent text-accent-fg shadow-sm shadow-accent/20"
+          ? "bg-accent/10 text-accent ring-1 ring-accent/20"
           : "bg-surface-2 text-muted hover:bg-accent/10 hover:text-accent",
       )}
       onClick={onToggle}
@@ -760,38 +728,6 @@ function ToggleChip({
     >
       {label}
     </button>
-  );
-}
-
-function ActiveFilterRow({
-  chips,
-  onClearAll,
-}: {
-  chips: Array<{ label: string; onRemove: () => void }>;
-  onClearAll: () => void;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-2 border-t border-subtle pt-3">
-      <span className="text-xs font-medium text-muted">Active</span>
-      {chips.map((chip) => (
-        <button
-          key={chip.label}
-          type="button"
-          className="inline-flex h-8 items-center gap-1.5 rounded-full bg-accent/10 px-2.5 text-xs font-semibold text-accent transition hover:bg-accent/15 focus:outline-none focus:ring-4 focus:ring-accent/15"
-          onClick={chip.onRemove}
-        >
-          {chip.label}
-          <X className="h-3.5 w-3.5" aria-hidden="true" />
-        </button>
-      ))}
-      <button
-        type="button"
-        className="h-8 rounded-full px-2.5 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-base"
-        onClick={onClearAll}
-      >
-        Clear all
-      </button>
-    </div>
   );
 }
 
@@ -880,74 +816,6 @@ function getBrowseSortValue(sort: SortState) {
   return matchingOption?.value ?? "bought_at:desc";
 }
 
-function getActiveFilterChips({
-  bundleFilter,
-  buyPlatformFilter,
-  categoryFilter,
-  hasImage,
-  inventoryOnly,
-  onClearBundle,
-  onClearCategory,
-  onClearImage,
-  onClearInventory,
-  onClearSearch,
-  onClearSource,
-  onClearStatus,
-  search,
-  statusFilter,
-}: {
-  bundleFilter: BundleFilter;
-  buyPlatformFilter: string;
-  categoryFilter: string;
-  hasImage: boolean;
-  inventoryOnly: boolean;
-  onClearBundle: () => void;
-  onClearCategory: () => void;
-  onClearImage: () => void;
-  onClearInventory: () => void;
-  onClearSearch: () => void;
-  onClearSource: () => void;
-  onClearStatus: () => void;
-  search: string;
-  statusFilter: (typeof allStatuses)[number];
-}) {
-  const chips: Array<{ label: string; onRemove: () => void }> = [];
-  const trimmedSearch = search.trim();
-
-  if (trimmedSearch) {
-    chips.push({ label: `Search: ${trimmedSearch}`, onRemove: onClearSearch });
-  }
-
-  if (statusFilter !== "all") {
-    chips.push({ label: getStatusLabel(statusFilter), onRemove: onClearStatus });
-  }
-
-  if (categoryFilter !== "all") {
-    chips.push({ label: categoryFilter, onRemove: onClearCategory });
-  }
-
-  if (buyPlatformFilter !== "all") {
-    chips.push({ label: `Source: ${buyPlatformFilter}`, onRemove: onClearSource });
-  }
-
-  if (inventoryOnly) {
-    chips.push({ label: "Inventory", onRemove: onClearInventory });
-  }
-
-  if (bundleFilter !== "none") {
-    chips.push({
-      label: bundleFilter === "active" ? "Active bundles" : "Bundles",
-      onRemove: onClearBundle,
-    });
-  }
-
-  if (hasImage) {
-    chips.push({ label: "Image", onRemove: onClearImage });
-  }
-
-  return chips;
-}
-
 function getGalleryCardSize() {
   if (window.innerWidth >= 1280) {
     return 240;
@@ -964,6 +832,6 @@ const controlClassName =
   "h-11 w-full min-w-0 rounded-lg border border-border-base bg-card px-3 text-sm text-base outline-none transition placeholder:text-muted focus:border-accent focus:ring-4 focus:ring-accent/10 ";
 const selectControlClassName = controlClassName + " pr-10";
 const searchControlClassName =
-  "h-12 w-full min-w-0 rounded-xl border border-transparent bg-surface-2 px-4 pl-10 text-base text-base outline-none transition placeholder:text-muted hover:bg-card focus:border-accent focus:bg-card focus:ring-4 focus:ring-accent/10";
+  "h-12 w-full min-w-0 rounded-xl border border-border-base bg-card px-4 pl-10 text-base text-base outline-none transition placeholder:text-muted hover:border-accent/40 hover:bg-card focus:border-accent focus:bg-card focus:ring-4 focus:ring-accent/10";
 const softSelectControlClassName =
   "h-9 w-full min-w-0 rounded-full border border-transparent bg-surface-2 px-3 pr-9 text-sm font-semibold text-muted outline-none transition hover:bg-accent/10 hover:text-accent focus:border-accent focus:bg-card focus:ring-4 focus:ring-accent/10";
