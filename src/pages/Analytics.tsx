@@ -43,6 +43,7 @@ import {
   formatCurrency,
   getBuyPlatform,
   getSellPlatform,
+  uniqueTextValues,
 } from '@/lib/utils'
 import type { Item } from '@/types'
 import { useNavigate } from 'react-router-dom'
@@ -102,15 +103,15 @@ export function Analytics() {
   const [statuses, setStatuses] = useState<FilterStatus[]>([])
 
   const categoryOptions = useMemo(
-    () => uniqueValues(items.map((item) => item.category)),
+    () => uniqueTextValues(items.map((item) => item.category)),
     [items],
   )
   const buyPlatformOptions = useMemo(
-    () => uniqueValues(items.map((item) => getBuyPlatform(item))),
+    () => uniqueTextValues(items.map((item) => getBuyPlatform(item))),
     [items],
   )
   const sellPlatformOptions = useMemo(
-    () => uniqueValues(items.map((item) => getSellPlatform(item))),
+    () => uniqueTextValues(items.map((item) => getSellPlatform(item))),
     [items],
   )
   const dateRange = useMemo(
@@ -920,26 +921,6 @@ function matchesOption(selectedValues: string[], value: string) {
     selectedValues.length === 0 ||
     selectedValues.some((selectedValue) => selectedValue.toLowerCase() === value.toLowerCase())
   )
-}
-
-function uniqueValues(values: string[]) {
-  const valuesByLowercase = new Map<string, string>()
-
-  for (const value of values) {
-    const trimmedValue = value.trim()
-
-    if (!trimmedValue) {
-      continue
-    }
-
-    const normalizedValue = trimmedValue.toLowerCase()
-
-    if (!valuesByLowercase.has(normalizedValue)) {
-      valuesByLowercase.set(normalizedValue, trimmedValue)
-    }
-  }
-
-  return Array.from(valuesByLowercase.values()).sort((a, b) => a.localeCompare(b))
 }
 
 function truncateText(value: string, maxLength: number) {

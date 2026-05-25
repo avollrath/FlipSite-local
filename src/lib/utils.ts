@@ -37,6 +37,28 @@ export function formatCurrency(value: number | null | undefined) {
 export const sumCurrency = (values: Array<number | null | undefined>): number =>
   Math.round(values.reduce<number>((acc, value) => acc + (value ?? 0), 0) * 100) / 100
 
+export function uniqueTextValues(values: Array<string | null | undefined>) {
+  const valuesByLowercase = new Map<string, string>()
+
+  for (const value of values) {
+    const trimmedValue = value?.trim()
+
+    if (!trimmedValue) {
+      continue
+    }
+
+    const normalizedValue = trimmedValue.toLowerCase()
+
+    if (!valuesByLowercase.has(normalizedValue)) {
+      valuesByLowercase.set(normalizedValue, trimmedValue)
+    }
+  }
+
+  return Array.from(valuesByLowercase.values()).sort((first, second) =>
+    first.localeCompare(second),
+  )
+}
+
 export function calcProfit(
   buyPrice: number | null | undefined,
   sellPrice: number | null | undefined,

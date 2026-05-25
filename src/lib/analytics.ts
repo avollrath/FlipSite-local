@@ -10,6 +10,7 @@ import {
   getBuyPlatform,
   getSellPlatform,
   sumCurrency,
+  uniqueTextValues,
 } from '@/lib/utils'
 import { toMonthKey } from '@/lib/dateUtils'
 import { createItemIndex } from '@/domain/items/itemIndex'
@@ -295,7 +296,7 @@ export function buildCumulativeProfit(items: Item[]): CumulativeProfitDatum[] {
 }
 
 export function buildCategoryStats(items: Item[]): CategoryStat[] {
-  const categoryNames = uniqueValues(items.map((item) => item.category))
+  const categoryNames = uniqueTextValues(items.map((item) => item.category))
   const aggregateIds = new Set(createItemIndex(items).aggregateItems.map((item) => item.tsid))
 
   return categoryNames
@@ -403,24 +404,4 @@ function shortDate(value: string | null) {
 
 export function average(values: number[]) {
   return values.length > 0 ? values.reduce((sum, value) => sum + value, 0) / values.length : 0
-}
-
-function uniqueValues(values: string[]) {
-  const valuesByLowercase = new Map<string, string>()
-
-  for (const value of values) {
-    const trimmedValue = value.trim()
-
-    if (!trimmedValue) {
-      continue
-    }
-
-    const normalizedValue = trimmedValue.toLowerCase()
-
-    if (!valuesByLowercase.has(normalizedValue)) {
-      valuesByLowercase.set(normalizedValue, trimmedValue)
-    }
-  }
-
-  return Array.from(valuesByLowercase.values())
 }

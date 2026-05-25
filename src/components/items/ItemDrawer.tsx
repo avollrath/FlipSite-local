@@ -56,6 +56,7 @@ import {
  getBuyPlatform,
  getSellPlatform,
  parseMoneyInput,
+ uniqueTextValues,
 } from '@/lib/utils'
 import { loadSettings } from '@/lib/settings'
 import type { Item } from '@/types'
@@ -112,12 +113,12 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
  )
 
  const categories = useMemo(
- () => uniqueValues(items.map((existingItem) => existingItem.category)),
+ () => uniqueTextValues(items.map((existingItem) => existingItem.category)),
  [items],
  )
  const platforms = useMemo(
  () =>
- uniqueValues(
+ uniqueTextValues(
   items.flatMap((existingItem) => [
   getBuyPlatform(existingItem),
   getSellPlatform(existingItem),
@@ -525,28 +526,6 @@ function DeletePanel({
   </button>
  )}
  </div>
- )
-}
-
-function uniqueValues(values: string[]) {
- const valuesByLowercase = new Map<string, string>()
-
- for (const value of values) {
- const trimmedValue = value.trim()
-
- if (!trimmedValue) {
- continue
- }
-
- const normalizedValue = trimmedValue.toLowerCase()
-
- if (!valuesByLowercase.has(normalizedValue)) {
- valuesByLowercase.set(normalizedValue, trimmedValue)
- }
- }
-
- return Array.from(valuesByLowercase.values()).sort((a, b) =>
- a.localeCompare(b),
  )
 }
 

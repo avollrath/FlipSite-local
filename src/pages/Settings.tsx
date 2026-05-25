@@ -34,7 +34,12 @@ import {
  useTheme,
  type ThemeName,
 } from '@/lib/theme'
-import { getBuyPlatform, getSellPlatform, getStatusLabel } from '@/lib/utils'
+import {
+ getBuyPlatform,
+ getSellPlatform,
+ getStatusLabel,
+ uniqueTextValues,
+} from '@/lib/utils'
 import type { ItemStatus } from '@/types'
 
 const statuses: ItemStatus[] = ['holding', 'listed', 'sold', 'keeper']
@@ -62,13 +67,13 @@ export function Settings() {
 
  const platforms = useMemo(
  () =>
- uniqueValues(
+ uniqueTextValues(
   items.flatMap((item) => [getBuyPlatform(item), getSellPlatform(item)]),
  ),
  [items],
  )
  const categories = useMemo(
- () => uniqueValues(items.map((item) => item.category)),
+ () => uniqueTextValues(items.map((item) => item.category)),
  [items],
  )
  const username = draftUsername ?? profile?.username ?? ''
@@ -614,17 +619,6 @@ function FontSwatch({
 const inputClassName =
  'h-11 w-full rounded-lg border border-border-base bg-card px-3 text-sm text-base outline-none transition placeholder:text-muted read-only:bg-surface-2 focus:border-accent focus:ring-4 focus:ring-accent/10'
 const selectClassName = `${inputClassName} truncate pr-10`
-
-function uniqueValues(values: Array<string | null | undefined>) {
- return Array.from(
- new Map(
-  values
-  .map((value) => value?.trim())
-  .filter((value): value is string => Boolean(value))
-  .map((value) => [value.toLowerCase(), value]),
- ).values(),
- ).sort((first, second) => first.localeCompare(second))
-}
 
 function getAvatarUrl(avatarUrl: string | null | undefined, updatedAt: string | null | undefined) {
  if (!avatarUrl) {
