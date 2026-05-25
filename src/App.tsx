@@ -1,3 +1,4 @@
+import { Suspense, lazy } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
  BrowserRouter,
@@ -11,16 +12,34 @@ import { Toaster } from 'sonner'
 import { Layout } from '@/components/layout/Layout'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import { ThemeProvider } from '@/lib/theme'
-import { Analytics } from '@/pages/Analytics'
-import { Categories } from '@/pages/Categories'
-import { ImportExport } from '@/pages/ImportExport'
-import { Items } from '@/pages/Items'
-import { Landing } from '@/pages/Landing'
 import { Login } from '@/pages/Login'
-import { PeriodReport } from '@/pages/PeriodReport'
-import { Settings } from '@/pages/Settings'
 
 const queryClient = new QueryClient()
+const Analytics = lazy(() =>
+ import('@/pages/Analytics').then((module) => ({ default: module.Analytics })),
+)
+const Categories = lazy(() =>
+ import('@/pages/Categories').then((module) => ({ default: module.Categories })),
+)
+const ImportExport = lazy(() =>
+ import('@/pages/ImportExport').then((module) => ({
+ default: module.ImportExport,
+ })),
+)
+const Items = lazy(() =>
+ import('@/pages/Items').then((module) => ({ default: module.Items })),
+)
+const Landing = lazy(() =>
+ import('@/pages/Landing').then((module) => ({ default: module.Landing })),
+)
+const PeriodReport = lazy(() =>
+ import('@/pages/PeriodReport').then((module) => ({
+ default: module.PeriodReport,
+ })),
+)
+const Settings = lazy(() =>
+ import('@/pages/Settings').then((module) => ({ default: module.Settings })),
+)
 
 function ProtectedRoute() {
  const { user, loading } = useAuth()
@@ -67,6 +86,14 @@ function StartupLoader() {
   </div>
  </div>
  </main>
+)
+}
+
+function RouteLoader() {
+ return (
+ <main className="grid min-h-[50vh] place-items-center bg-surface text-base">
+ <div className="h-8 w-8 animate-spin rounded-full border-2 border-layout border-t-accent" />
+ </main>
  )
 }
 
@@ -77,6 +104,7 @@ function App() {
   <AuthProvider>
   <BrowserRouter>
   <Toaster richColors position="top-right" theme="system" />
+  <Suspense fallback={<RouteLoader />}>
   <Routes>
    <Route path="/" element={<PublicHomeRoute />} />
    <Route path="/landing" element={<PublicHomeRoute />} />
@@ -95,6 +123,7 @@ function App() {
    </Route>
    <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>
+  </Suspense>
   </BrowserRouter>
   </AuthProvider>
  </ThemeProvider>
