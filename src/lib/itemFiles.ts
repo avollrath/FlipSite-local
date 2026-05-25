@@ -99,7 +99,7 @@ export async function uploadItemFile(itemId: string, file: File) {
     throwSafeFileError(insertError, 'Unable to save file details. Please try again.')
   }
 
-  return data as ItemFile
+  return data
 }
 
 export async function getItemFiles(itemId: string) {
@@ -115,7 +115,7 @@ export async function getItemFiles(itemId: string) {
     throwSafeFileError(error, 'Unable to load item files. Please try again.')
   }
 
-  return data as ItemFile[]
+  return data
 }
 
 export async function deleteItemFile(fileId: string, filePath: string) {

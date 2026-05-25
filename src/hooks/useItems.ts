@@ -51,7 +51,7 @@ export function useItems() {
         throw error
       }
 
-      return (data as Item[]).map(normalizeItem)
+      return data.map(normalizeItem)
     },
   })
 }
@@ -87,7 +87,7 @@ export function useAddItem() {
         throw error
       }
 
-      const createdItem = normalizeItem(data as Item)
+      const createdItem = normalizeItem(data)
 
       if (createdItem.bundle_id) {
         await markBundleParentSoldIfComplete(createdItem.bundle_id, user.id)
@@ -139,7 +139,7 @@ export function useAddBundle() {
         throw parentError
       }
 
-      const typedParent = normalizeItem(parentItem as Item)
+      const typedParent = normalizeItem(parentItem)
 
       if (children.length > 0) {
         const childRows = children.map((child) => ({
@@ -207,7 +207,7 @@ export function useUpdateItem() {
         throw error
       }
 
-      const updatedItem = normalizeItem(data as Item)
+      const updatedItem = normalizeItem(data)
 
       if (syncBundleParent && updatedItem.bundle_id) {
         await markBundleParentSoldIfComplete(updatedItem.bundle_id, user.id)

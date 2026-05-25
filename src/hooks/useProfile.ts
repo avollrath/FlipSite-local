@@ -44,7 +44,7 @@ export function useProfile() {
       }
 
       if (data) {
-        return data as Profile
+        return data
       }
 
       const { data: createdProfile, error: upsertError } = await supabase
@@ -62,7 +62,7 @@ export function useProfile() {
         throw upsertError
       }
 
-      return createdProfile as Profile
+      return createdProfile
     },
   })
 
@@ -90,7 +90,7 @@ export function useProfile() {
         throw error
       }
 
-      return updatedProfile as Profile
+      return updatedProfile
     },
     onSuccess: (updatedProfile) => {
       queryClient.setQueryData(queryKey, updatedProfile)
