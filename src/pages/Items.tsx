@@ -6,6 +6,7 @@ import {
   Plus,
   Search,
   Trash2,
+  X,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -59,20 +60,21 @@ const tableColumns: Array<{ key: SortKey | "actions"; label: string }> = [
   { key: "sold_at", label: "Date Sold" },
   { key: "actions", label: "Actions" },
 ];
-const gallerySortOptions: Array<{ key: SortKey; label: string }> = [
-  { key: "bought_at", label: "Bought date" },
-  { key: "sold_at", label: "Sold date" },
-  { key: "name", label: "Name" },
-  { key: "category", label: "Category" },
-  { key: "condition", label: "Condition" },
-  { key: "buy_price", label: "Buy price" },
-  { key: "sell_price", label: "Sell price" },
-  { key: "profit", label: "Profit" },
-  { key: "roi", label: "ROI %" },
-  { key: "buy_platform", label: "Bought from" },
-  { key: "sell_platform", label: "Sold on" },
-  { key: "status", label: "Status" },
-  { key: "created_at", label: "Created date" },
+const browseSortOptions: Array<{
+  direction: SortState["direction"];
+  key: SortKey;
+  label: string;
+  value: string;
+}> = [
+  { key: "bought_at", direction: "desc", label: "Newest first", value: "bought_at:desc" },
+  { key: "bought_at", direction: "asc", label: "Oldest first", value: "bought_at:asc" },
+  { key: "profit", direction: "desc", label: "Highest profit", value: "profit:desc" },
+  { key: "profit", direction: "asc", label: "Lowest profit", value: "profit:asc" },
+  { key: "roi", direction: "desc", label: "Highest ROI", value: "roi:desc" },
+  { key: "roi", direction: "asc", label: "Lowest ROI", value: "roi:asc" },
+  { key: "sold_at", direction: "desc", label: "Recently sold", value: "sold_at:desc" },
+  { key: "bought_at", direction: "asc", label: "Oldest inventory", value: "oldest_inventory" },
+  { key: "created_at", direction: "desc", label: "Recently added", value: "created_at:desc" },
 ];
 
 export function Items() {
@@ -106,6 +108,7 @@ export function Items() {
     key: "bought_at",
     direction: "desc",
   });
+  const [browseSortValue, setBrowseSortValue] = useState("bought_at:desc");
   const [drawer, setDrawer] = useState<DrawerState>({
     open: false,
     mode: "add",
@@ -299,27 +302,18 @@ export function Items() {
   }
 
   function updateSort(key: SortKey) {
-    setSort((currentSort) => ({
-      key,
-      direction:
+    setSort((currentSort) => {
+      const nextSort: SortState = {
+        key,
+        direction:
         currentSort.key === key && currentSort.direction === "asc"
           ? "desc"
           : "asc",
-    }));
-  }
+      };
+      setBrowseSortValue(getBrowseSortValue(nextSort));
 
-  function updateGallerySortKey(key: SortKey) {
-    setSort((currentSort) => ({
-      key,
-      direction: currentSort.key === key ? currentSort.direction : "desc",
-    }));
-  }
-
-  function updateSortDirection(direction: SortState["direction"]) {
-    setSort((currentSort) => ({
-      ...currentSort,
-      direction,
-    }));
+      return nextSort;
+    });
   }
 
   function updateViewMode(nextViewMode: ViewMode) {
@@ -328,6 +322,17 @@ export function Items() {
     }
 
     setViewMode(nextViewMode);
+  }
+
+  function updateBrowseSort(value: string) {
+    const option = browseSortOptions.find((sortOption) => sortOption.value === value);
+
+    if (!option) {
+      return;
+    }
+
+    setSort({ key: option.key, direction: option.direction });
+    setBrowseSortValue(value);
   }
 
   function toggleBundle(tsid: string) {
@@ -358,6 +363,33 @@ export function Items() {
   }
 
   const emptyAllItems = !isLoading && items.length === 0;
+  const activeFilterChips = getActiveFilterChips({
+    bundleFilter,
+    buyPlatformFilter,
+    categoryFilter,
+    hasImage: viewMode === "gallery" ? hasImage : false,
+    inventoryOnly,
+    search,
+    statusFilter,
+    onClearBundle: () => setBundleFilter("none"),
+    onClearCategory: () => setCategoryFilter("all"),
+    onClearImage: () => setHasImage(false),
+    onClearInventory: () => setInventoryOnly(false),
+    onClearSearch: () => setSearch(""),
+    onClearSource: () => setBuyPlatformFilter("all"),
+    onClearStatus: () => setStatusFilter("all"),
+  });
+  const hasActiveFilters = activeFilterChips.length > 0;
+
+  function clearAllFilters() {
+    setSearch("");
+    setStatusFilter("all");
+    setBuyPlatformFilter("all");
+    setCategoryFilter("all");
+    setBundleFilter("none");
+    setInventoryOnly(false);
+    setHasImage(false);
+  }
 
   return (
     <section ref={pageRef}>
@@ -392,97 +424,99 @@ export function Items() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 p-4 rounded-lg shadow-sm bg-card">
-          <label className="relative block min-w-[180px] max-w-[320px] flex-[1_1_220px]">
-            <Search
-              className="absolute w-4 h-4 -translate-y-1/2 pointer-events-none left-3 top-1/2 text-muted"
-              aria-hidden="true"
-            />
-            <input
-              className={controlClassName + " min-w-0 truncate pl-9"}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search items"
-            />
-          </label>
-          <ViewToggle value={viewMode} onChange={updateViewMode} />
-          {viewMode === "gallery" ? (
-            <GallerySortControl
-              sort={sort}
-              onDirectionChange={updateSortDirection}
-              onKeyChange={updateGallerySortKey}
-            />
-          ) : null}
+        <div className="rounded-xl bg-card p-3 shadow-sm">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+              <label className="relative block min-w-0 flex-1">
+                <Search
+                  className="absolute w-4 h-4 -translate-y-1/2 pointer-events-none left-3 top-1/2 text-muted"
+                  aria-hidden="true"
+                />
+                <input
+                  className={searchControlClassName}
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search by item, category, source, notes..."
+                />
+              </label>
 
-          <FilterSelect
-            label="Status"
-            value={statusFilter}
-            onChange={(value) =>
-              setStatusFilter(value as (typeof allStatuses)[number])
-            }
-            options={allStatuses.map((status) => ({
-              value: status,
-              label: status === "all" ? "All Statuses" : getStatusLabel(status),
-            }))}
-            className="min-w-[150px] flex-[0_1_180px]"
-          />
-          <FilterSelect
-            label="Bought from"
-            value={buyPlatformFilter}
-            onChange={setBuyPlatformFilter}
-            options={[
-              { value: "all", label: "All Sources" },
-              ...buyPlatforms.map((platform) => ({
-                value: platform,
-                label: platform,
-              })),
-            ]}
-            className="min-w-[150px] flex-[0_1_180px]"
-          />
-          <FilterSelect
-            label="Category"
-            value={categoryFilter}
-            onChange={setCategoryFilter}
-            options={[
-              { value: "all", label: "All Categories" },
-              ...categories.map((category) => ({
-                value: category,
-                label: category,
-              })),
-            ]}
-            className="min-w-[160px] max-w-[240px] flex-[0_1_220px]"
-          />
-          <label className="flex h-11 flex-[0_0_auto] items-center gap-2 whitespace-nowrap rounded-lg border border-layout bg-card px-3 text-sm font-medium text-base ">
-            <input
-              type="checkbox"
-              className="w-4 h-4 rounded border-border-base text-accent focus:ring-accent"
-              checked={bundleFilter !== "none"}
-              onChange={(event) =>
-                setBundleFilter(event.target.checked ? "only" : "none")
-              }
-            />
-            Bundles only
-          </label>
-          {viewMode === "gallery" ? (
-            <label className="flex h-11 flex-[0_0_auto] items-center gap-2 whitespace-nowrap rounded-lg border border-layout bg-card px-3 text-sm font-medium text-base ">
-              <input
-                type="checkbox"
-                className="w-4 h-4 rounded border-border-base text-accent focus:ring-accent"
-                checked={hasImage}
-                onChange={(event) => setHasImage(event.target.checked)}
+              <div className="flex flex-col gap-2 sm:flex-row lg:flex-[0_0_auto]">
+                <FilterSelect
+                  label="Status"
+                  value={statusFilter}
+                  onChange={(value) =>
+                    setStatusFilter(value as (typeof allStatuses)[number])
+                  }
+                  options={allStatuses.map((status) => ({
+                    value: status,
+                    label: status === "all" ? "Any status" : getStatusLabel(status),
+                  }))}
+                  className="sm:w-40"
+                />
+                <FilterSelect
+                  label="Category"
+                  value={categoryFilter}
+                  onChange={setCategoryFilter}
+                  options={[
+                    { value: "all", label: "Any category" },
+                    ...categories.map((category) => ({
+                      value: category,
+                      label: category,
+                    })),
+                  ]}
+                  className="sm:w-48"
+                />
+                <BrowseSortControl
+                  value={browseSortValue}
+                  onChange={updateBrowseSort}
+                />
+                <ViewToggle value={viewMode} onChange={updateViewMode} />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <FilterSelect
+                label="Source"
+                value={buyPlatformFilter}
+                onChange={setBuyPlatformFilter}
+                options={[
+                  { value: "all", label: "Any source" },
+                  ...buyPlatforms.map((platform) => ({
+                    value: platform,
+                    label: platform,
+                  })),
+                ]}
+                className="w-full sm:w-44"
+                variant="soft"
               />
-              Image
-            </label>
-          ) : null}
-          <label className="flex h-11 flex-[0_0_auto] items-center gap-2 whitespace-nowrap rounded-lg border border-layout bg-card px-3 text-sm font-medium text-base ">
-            <input
-              type="checkbox"
-              className="w-4 h-4 rounded border-border-base text-accent focus:ring-accent"
-              checked={inventoryOnly}
-              onChange={(event) => setInventoryOnly(event.target.checked)}
-            />
-            Inventory
-          </label>
+              <ToggleChip
+                active={inventoryOnly}
+                label="Inventory"
+                onToggle={() => setInventoryOnly((current) => !current)}
+              />
+              <ToggleChip
+                active={bundleFilter !== "none"}
+                label="Bundles"
+                onToggle={() =>
+                  setBundleFilter((current) => (current === "none" ? "only" : "none"))
+                }
+              />
+              {viewMode === "gallery" ? (
+                <ToggleChip
+                  active={hasImage}
+                  label="Image"
+                  onToggle={() => setHasImage((current) => !current)}
+                />
+              ) : null}
+            </div>
+
+            {hasActiveFilters ? (
+              <ActiveFilterRow
+                chips={activeFilterChips}
+                onClearAll={clearAllFilters}
+              />
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -643,48 +677,28 @@ function ViewToggle({
   );
 }
 
-function GallerySortControl({
-  onDirectionChange,
-  onKeyChange,
-  sort,
+function BrowseSortControl({
+  onChange,
+  value,
 }: {
-  onDirectionChange: (direction: SortState["direction"]) => void;
-  onKeyChange: (key: SortKey) => void;
-  sort: SortState;
+  onChange: (value: string) => void;
+  value: string;
 }) {
   return (
-    <div className="flex min-w-[260px] flex-[0_0_auto] gap-2">
-      <label className="flex-1 block min-w-0">
-        <span className="sr-only">Gallery sort field</span>
-        <select
-          className={selectControlClassName}
-          value={sort.key}
-          onChange={(event) => onKeyChange(event.target.value as SortKey)}
-        >
-          {gallerySortOptions.map((option) => (
-            <option key={option.key} value={option.key}>
-              Sort: {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <div className="grid grid-cols-2 p-1 rounded-lg h-11 w-28 shrink-0 bg-surface-2">
-        {(["asc", "desc"] as const).map((direction) => (
-          <button
-            key={direction}
-            type="button"
-            className={`rounded-md px-2 text-xs font-semibold transition ${
-              sort.direction === direction
-                ? "bg-card text-accent shadow-sm"
-                : "text-muted hover:text-base"
-            }`}
-            onClick={() => onDirectionChange(direction)}
-          >
-            {direction === "asc" ? "Asc" : "Desc"}
-          </button>
+    <label className="block sm:w-44">
+      <span className="sr-only">Sort items</span>
+      <select
+        className={selectControlClassName}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {browseSortOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
         ))}
-      </div>
-    </div>
+      </select>
+    </label>
   );
 }
 
@@ -693,19 +707,23 @@ function FilterSelect({
   label,
   onChange,
   options,
+  variant = "default",
   value,
 }: {
   className?: string;
   label: string;
   onChange: (value: string) => void;
   options: Array<{ value: string; label: string }>;
+  variant?: "default" | "soft";
   value: string;
 }) {
   return (
     <label className={`block ${className}`}>
       <span className="sr-only">{label}</span>
       <select
-        className={selectControlClassName}
+        className={
+          variant === "soft" ? softSelectControlClassName : selectControlClassName
+        }
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >
@@ -716,6 +734,64 @@ function FilterSelect({
         ))}
       </select>
     </label>
+  );
+}
+
+function ToggleChip({
+  active,
+  label,
+  onToggle,
+}: {
+  active: boolean;
+  label: string;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "inline-flex h-9 items-center justify-center rounded-full px-3 text-sm font-semibold transition focus:outline-none focus:ring-4 focus:ring-accent/15",
+        active
+          ? "bg-accent text-accent-fg shadow-sm shadow-accent/20"
+          : "bg-surface-2 text-muted hover:bg-accent/10 hover:text-accent",
+      )}
+      onClick={onToggle}
+      aria-pressed={active}
+    >
+      {label}
+    </button>
+  );
+}
+
+function ActiveFilterRow({
+  chips,
+  onClearAll,
+}: {
+  chips: Array<{ label: string; onRemove: () => void }>;
+  onClearAll: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-t border-subtle pt-3">
+      <span className="text-xs font-medium text-muted">Active</span>
+      {chips.map((chip) => (
+        <button
+          key={chip.label}
+          type="button"
+          className="inline-flex h-8 items-center gap-1.5 rounded-full bg-accent/10 px-2.5 text-xs font-semibold text-accent transition hover:bg-accent/15 focus:outline-none focus:ring-4 focus:ring-accent/15"
+          onClick={chip.onRemove}
+        >
+          {chip.label}
+          <X className="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+      ))}
+      <button
+        type="button"
+        className="h-8 rounded-full px-2.5 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-base"
+        onClick={onClearAll}
+      >
+        Clear all
+      </button>
+    </div>
   );
 }
 
@@ -796,6 +872,82 @@ function getInitialViewMode(): ViewMode {
     : "list";
 }
 
+function getBrowseSortValue(sort: SortState) {
+  const matchingOption = browseSortOptions.find(
+    (option) => option.key === sort.key && option.direction === sort.direction,
+  );
+
+  return matchingOption?.value ?? "bought_at:desc";
+}
+
+function getActiveFilterChips({
+  bundleFilter,
+  buyPlatformFilter,
+  categoryFilter,
+  hasImage,
+  inventoryOnly,
+  onClearBundle,
+  onClearCategory,
+  onClearImage,
+  onClearInventory,
+  onClearSearch,
+  onClearSource,
+  onClearStatus,
+  search,
+  statusFilter,
+}: {
+  bundleFilter: BundleFilter;
+  buyPlatformFilter: string;
+  categoryFilter: string;
+  hasImage: boolean;
+  inventoryOnly: boolean;
+  onClearBundle: () => void;
+  onClearCategory: () => void;
+  onClearImage: () => void;
+  onClearInventory: () => void;
+  onClearSearch: () => void;
+  onClearSource: () => void;
+  onClearStatus: () => void;
+  search: string;
+  statusFilter: (typeof allStatuses)[number];
+}) {
+  const chips: Array<{ label: string; onRemove: () => void }> = [];
+  const trimmedSearch = search.trim();
+
+  if (trimmedSearch) {
+    chips.push({ label: `Search: ${trimmedSearch}`, onRemove: onClearSearch });
+  }
+
+  if (statusFilter !== "all") {
+    chips.push({ label: getStatusLabel(statusFilter), onRemove: onClearStatus });
+  }
+
+  if (categoryFilter !== "all") {
+    chips.push({ label: categoryFilter, onRemove: onClearCategory });
+  }
+
+  if (buyPlatformFilter !== "all") {
+    chips.push({ label: `Source: ${buyPlatformFilter}`, onRemove: onClearSource });
+  }
+
+  if (inventoryOnly) {
+    chips.push({ label: "Inventory", onRemove: onClearInventory });
+  }
+
+  if (bundleFilter !== "none") {
+    chips.push({
+      label: bundleFilter === "active" ? "Active bundles" : "Bundles",
+      onRemove: onClearBundle,
+    });
+  }
+
+  if (hasImage) {
+    chips.push({ label: "Image", onRemove: onClearImage });
+  }
+
+  return chips;
+}
+
 function getGalleryCardSize() {
   if (window.innerWidth >= 1280) {
     return 240;
@@ -811,3 +963,7 @@ function getGalleryCardSize() {
 const controlClassName =
   "h-11 w-full min-w-0 rounded-lg border border-border-base bg-card px-3 text-sm text-base outline-none transition placeholder:text-muted focus:border-accent focus:ring-4 focus:ring-accent/10 ";
 const selectControlClassName = controlClassName + " pr-10";
+const searchControlClassName =
+  "h-12 w-full min-w-0 rounded-xl border border-transparent bg-surface-2 px-4 pl-10 text-base text-base outline-none transition placeholder:text-muted hover:bg-card focus:border-accent focus:bg-card focus:ring-4 focus:ring-accent/10";
+const softSelectControlClassName =
+  "h-9 w-full min-w-0 rounded-full border border-transparent bg-surface-2 px-3 pr-9 text-sm font-semibold text-muted outline-none transition hover:bg-accent/10 hover:text-accent focus:border-accent focus:bg-card focus:ring-4 focus:ring-accent/10";
