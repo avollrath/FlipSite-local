@@ -2,7 +2,6 @@ import {
   calculateItemProfit,
   calculateItemROI,
   calculateItemSellValue,
-  getFlippingAggregateItems,
   getEffectiveItemStatus,
   isKeepingItem,
 } from '@/lib/itemAccounting'
@@ -177,8 +176,13 @@ export function buildDashboardMetrics(items: Item[]): DashboardMetrics {
 
 export function buildMonthlyPerformance(items: Item[]): ChartDatum[] {
   const monthlyData = new Map<string, { profit: number; revenue: number }>()
+  const itemIndex = createItemIndex(items)
 
-  for (const item of getFlippingAggregateItems(items)) {
+  for (const item of itemIndex.aggregateItems) {
+    if (isKeepingItem(item)) {
+      continue
+    }
+
     const revenue = calculateItemSellValue(item, items)
 
     if (revenue <= 0) {
@@ -296,12 +300,20 @@ export function buildCumulativeProfit(items: Item[]): CumulativeProfitDatum[] {
 }
 
 export function buildCategoryStats(items: Item[]): CategoryStat[] {
+  const itemIndex = createItemIndex(items)
   const categoryNames = uniqueTextValues(items.map((item) => item.category))
-  const aggregateIds = new Set(createItemIndex(items).aggregateItems.map((item) => item.tsid))
+  const aggregateIds = new Set(itemIndex.aggregateItems.map((item) => item.tsid))
+  const itemsByCategory = new Map<string, Item[]>()
+
+  for (const item of items) {
+    const categoryItems = itemsByCategory.get(item.category) ?? []
+    categoryItems.push(item)
+    itemsByCategory.set(item.category, categoryItems)
+  }
 
   return categoryNames
     .map((category) => {
-      const categoryItems = items.filter((item) => item.category === category)
+      const categoryItems = itemsByCategory.get(category) ?? []
       const aggregateItems = categoryItems.filter((item) => aggregateIds.has(item.tsid))
       const flippingAggregateItems = aggregateItems.filter((item) => !isKeepingItem(item))
 
