@@ -11,7 +11,7 @@ import { NavLink } from 'react-router-dom'
 const navItems = [
  { label: 'Items', href: '/items', icon: Package },
  { label: 'Dashboard', href: '/dashboard', icon: Gauge },
- { label: 'Report', href: '/report', icon: CalendarRange },
+ { label: 'Activity', href: '/activity-report', icon: CalendarRange },
  { label: 'Categories', href: '/categories', icon: Tags },
  { label: 'Import', href: '/import-export', icon: ArrowRightLeft },
  { label: 'Settings', href: '/settings', icon: Settings },

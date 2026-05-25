@@ -21,7 +21,8 @@
 - `/dashboard` – Main dashboard with filters, snapshot KPIs, attention cards, and charts
 - `/items` – Item list and detail view (with `/:itemId` param)
 - `/analytics` – Redirects to `/dashboard`
-- `/report` – Period/date range reports
+- `/activity-report` – Activity/date range report
+- `/report` – Redirects to `/activity-report`
 - `/categories` – Category management
 - `/import-export` – CSV import/export functionality
 - `/settings` – User settings, theme customization, profile management
@@ -37,7 +38,7 @@
 - **Position:** Fixed, full height, left-aligned, hidden on mobile (md: flex)
 - **Background:** `--sidebar-bg` CSS variable (theme-dependent)
 - **Padding:** 1.25rem (p-5)
-- **Navigation items:** 6 items (Items, Dashboard, Period Report, Categories, Import/Export, Settings)
+- **Navigation items:** 6 items (Items, Dashboard, Activity Report, Categories, Import/Export, Settings)
 - **Icons used:** Lucide React icons (Gauge, Package, BarChart3, CalendarRange, Tags, ArrowRightLeft, Settings, LogOut)
 - **Active state behavior:** 
   - Active: `bg-accent/25`, `text-sidebar-accent`, bold font

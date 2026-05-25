@@ -59,7 +59,7 @@ Bundles let you buy a collection for one price and sell the pieces separately. E
 
 ## Dashboard and reports
 
-Dashboard combines the main snapshot with trend charts and filters. Period Report gives a focused date range view for asking things like "how did I do on camera gear last quarter" or "which platform is actually working best." Bundle children stay visible as revenue detail while profit and ROI roll up to the parent bundle.
+Dashboard combines the main snapshot with trend charts and filters. Activity Report gives a focused date range view for asking things like "how did I do on camera gear last quarter" or "which platform is actually working best." Bundle children stay visible as revenue detail while profit and ROI roll up to the parent bundle.
 
 ![Dashboard trends](src/assets/analytics.jpg)
 

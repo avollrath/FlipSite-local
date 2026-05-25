@@ -25,7 +25,7 @@ interface SidebarProps {
 const navItems = [
  { label: 'Items', href: '/items', icon: Package },
  { label: 'Dashboard', href: '/dashboard', icon: Gauge },
- { label: 'Period Report', href: '/report', icon: CalendarRange },
+ { label: 'Activity Report', href: '/activity-report', icon: CalendarRange },
  { label: 'Categories', href: '/categories', icon: Tags },
  { label: 'Import / Export', href: '/import-export', icon: ArrowRightLeft },
  { label: 'Settings', href: '/settings', icon: Settings },

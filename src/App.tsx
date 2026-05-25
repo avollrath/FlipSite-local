@@ -115,7 +115,8 @@ function App() {
    <Route path="/items/:itemId" element={<Items />} />
    <Route path="/dashboard" element={<Analytics />} />
    <Route path="/analytics" element={<Navigate to="/dashboard" replace />} />
-   <Route path="/report" element={<PeriodReport />} />
+   <Route path="/activity-report" element={<PeriodReport />} />
+   <Route path="/report" element={<Navigate to="/activity-report" replace />} />
    <Route path="/categories" element={<Categories />} />
    <Route path="/import-export" element={<ImportExport />} />
    <Route path="/settings" element={<Settings />} />

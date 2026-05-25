@@ -176,9 +176,9 @@ export function PeriodReport() {
     <section>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-base">Period Report</h1>
+          <h1 className="text-3xl font-bold text-base">Activity Report</h1>
           <p className="mt-1 text-sm text-muted">
-            Browse your inventory and finances by time period
+            Review what you bought, sold, kept, and earned.
           </p>
         </div>
       </div>
