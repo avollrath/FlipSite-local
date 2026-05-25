@@ -2,6 +2,7 @@ import {
   Banknote,
   Boxes,
   Heart,
+  PackageOpen,
   TrendingDown,
   TrendingUp,
   WalletCards,
@@ -17,6 +18,8 @@ import {
 } from '@/lib/itemFiles'
 import {
   calculateItemProfit,
+  getEffectiveItemStatus,
+  isKeepingItem,
 } from '@/lib/itemAccounting'
 import {
   cn,
@@ -31,6 +34,8 @@ import {
   getPeriodRange,
   getPurchasedReportItems,
   getSoldReportItems,
+  isDateInRange,
+  sortReportItems,
   type Period,
   type ReportSortKey as SortKey,
   type ReportSortState as SortState,
@@ -53,10 +58,10 @@ const columns: Array<{ key: SortKey; label: string }> = [
   { key: 'name', label: 'Name' },
   { key: 'category', label: 'Category' },
   { key: 'status', label: 'Status' },
-  { key: 'bought_at', label: 'Date Bought' },
-  { key: 'sold_at', label: 'Date Sold' },
-  { key: 'buy_price', label: 'Buy Price' },
-  { key: 'sell_price', label: 'Sell Price' },
+  { key: 'bought_at', label: 'Bought' },
+  { key: 'sold_at', label: 'Sold' },
+  { key: 'buy_price', label: 'Buy cost' },
+  { key: 'sell_price', label: 'Revenue' },
   { key: 'profit', label: 'Profit' },
   { key: 'roi', label: 'ROI %' },
 ]
@@ -123,16 +128,54 @@ export function PeriodReport() {
       }),
     [items, periodItems, range, sort, sortTouched],
   )
+  const keptItems = useMemo(
+    () =>
+      sortReportItems(
+        periodItems.filter(
+          (item) => isDateInRange(item.bought_at, range) && isKeepingItem(item),
+        ),
+        sortTouched ? sort : { direction: 'desc', key: 'bought_at' },
+        items,
+      ),
+    [items, periodItems, range, sort, sortTouched],
+  )
+  const holdingItems = useMemo(
+    () =>
+      sortReportItems(
+        periodItems.filter((item) => {
+          if (!isDateInRange(item.bought_at, range) || isKeepingItem(item)) {
+            return false
+          }
+
+          const status = getEffectiveItemStatus(item, items)
+
+          return status === 'holding' || status === 'listed'
+        }),
+        sortTouched ? sort : { direction: 'desc', key: 'bought_at' },
+        items,
+      ),
+    [items, periodItems, range, sort, sortTouched],
+  )
+  const boughtItems = useMemo(() => {
+    const groupedIds = new Set([
+      ...keptItems.map((item) => item.tsid),
+      ...holdingItems.map((item) => item.tsid),
+    ])
+
+    return purchasedItems.filter((item) => !groupedIds.has(item.tsid))
+  }, [holdingItems, keptItems, purchasedItems])
   const biggestLoss = useMemo(
     () => getBiggestLoss(soldItems, items),
     [items, soldItems],
   )
   const visibleRows = useMemo(
     () => [
-      ...buildReportRows(purchasedItems, childrenByBundle, expandedBundles),
+      ...buildReportRows(boughtItems, childrenByBundle, expandedBundles),
       ...buildReportRows(soldItems, childrenByBundle, expandedBundles),
+      ...buildReportRows(keptItems, childrenByBundle, expandedBundles),
+      ...buildReportRows(holdingItems, childrenByBundle, expandedBundles),
     ],
-    [childrenByBundle, expandedBundles, purchasedItems, soldItems],
+    [boughtItems, childrenByBundle, expandedBundles, holdingItems, keptItems, soldItems],
   )
   const thumbnailItemIds = useMemo(
     () => visibleRows.map(({ item }) => item.tsid),
@@ -188,54 +231,56 @@ export function PeriodReport() {
   }
 
   return (
-    <section>
-      <div className="mb-6 flex items-center justify-between">
+    <section className="space-y-6">
+      <div className="flex flex-col gap-4">
         <div>
           <h1 className="text-3xl font-bold text-base">Activity Report</h1>
           <p className="mt-1 text-sm text-muted">
             Review what you bought, sold, kept, and earned.
           </p>
         </div>
-      </div>
 
-      <div className="mb-6 flex flex-wrap items-center gap-2">
-        {periodOptions.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            className={cn(
-              'rounded-full border border-transparent px-4 py-1.5 text-sm font-medium transition-colors',
-              period === option.value
-                ? 'border-accent bg-accent text-accent-fg'
-                : 'bg-surface-2 text-muted hover:border-subtle hover:text-[hsl(var(--text))]',
-            )}
-            onClick={() => setPeriod(option.value)}
-          >
-            {option.label}
-          </button>
-        ))}
-
-        {period === 'custom' ? (
-          <div className="ml-2 flex flex-wrap items-center gap-2">
-            <label className="grid gap-1 text-xs font-medium text-muted">
-              From
-              <DatePickerInput
-                className={dateInputClassName}
-                value={customFrom}
-                onChange={setCustomFrom}
-              />
-            </label>
-            <span className="mt-5 text-sm text-muted">-&gt;</span>
-            <label className="grid gap-1 text-xs font-medium text-muted">
-              To
-              <DatePickerInput
-                className={dateInputClassName}
-                value={customTo}
-                onChange={setCustomTo}
-              />
-            </label>
+        <div className="flex flex-col gap-3 rounded-xl bg-card p-2 shadow-sm">
+          <div className="flex flex-wrap gap-1.5">
+            {periodOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={cn(
+                  'rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus:ring-4 focus:ring-accent/15',
+                  period === option.value
+                    ? 'border-accent/30 bg-accent/10 text-accent'
+                    : 'border-transparent text-muted hover:border-accent/20 hover:bg-accent/5 hover:text-accent',
+                )}
+                onClick={() => setPeriod(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
-        ) : null}
+
+          {period === 'custom' ? (
+            <div className="flex flex-wrap items-end gap-2 border-t border-subtle pt-2">
+              <label className="grid gap-1 text-xs font-medium text-muted">
+                From
+                <DatePickerInput
+                  className={dateInputClassName}
+                  value={customFrom}
+                  onChange={setCustomFrom}
+                />
+              </label>
+              <span className="pb-2 text-sm text-muted">to</span>
+              <label className="grid gap-1 text-xs font-medium text-muted">
+                To
+                <DatePickerInput
+                  className={dateInputClassName}
+                  value={customTo}
+                  onChange={setCustomTo}
+                />
+              </label>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <ActivitySummary summary={summary} />
@@ -253,7 +298,9 @@ export function PeriodReport() {
             onOpenItem={openItem}
             onToggleBundle={toggleBundle}
             onUpdateSort={updateSort}
-            purchasedItems={purchasedItems}
+            holdingItems={holdingItems}
+            keptItems={keptItems}
+            purchasedItems={boughtItems}
             soldItems={soldItems}
             sort={sort}
             thumbnailByItemId={thumbnailByItemId}
@@ -295,7 +342,7 @@ function ActivitySummary({ summary }: { summary: ReportSummary }) {
         icon={Boxes}
         label="Activity"
         value={`${summary.purchased} bought`}
-        helper={`Sold ${summary.sold} · Kept ${summary.kept}`}
+        helper={`Sold ${summary.sold} / Kept ${summary.kept}`}
       />
     </section>
   )
@@ -448,12 +495,14 @@ function HighlightCard({
 
 function EmptyState() {
   return (
-    <div className="rounded-lg border border-dashed border-subtle bg-card p-10 text-center shadow-sm">
-      <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-accent-soft text-4xl">
-        📅
+    <div className="rounded-xl border border-dashed border-subtle bg-card p-10 text-center shadow-sm">
+      <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-accent/10 text-accent">
+        <PackageOpen className="h-9 w-9" aria-hidden="true" />
       </div>
-      <h3 className="mt-5 text-xl font-semibold">No items found for this period</h3>
-      <p className="mt-2 text-sm text-muted">Try a different date range</p>
+      <h3 className="mt-5 text-xl font-semibold">No activity in this range</h3>
+      <p className="mt-2 text-sm text-muted">
+        Try a wider date range to review bought, sold, or kept items.
+      </p>
     </div>
   )
 }

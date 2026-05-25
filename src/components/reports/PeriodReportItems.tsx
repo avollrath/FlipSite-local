@@ -38,6 +38,8 @@ export function PeriodReportItems({
  onOpenItem,
  onToggleBundle,
  onUpdateSort,
+ holdingItems,
+ keptItems,
  purchasedItems,
  soldItems,
  sort,
@@ -50,6 +52,8 @@ export function PeriodReportItems({
  onOpenItem: (item: Item) => void
  onToggleBundle: (itemId: string) => void
  onUpdateSort: (key: ReportSortKey) => void
+ holdingItems: Item[]
+ keptItems: Item[]
  purchasedItems: Item[]
  soldItems: Item[]
  sort: ReportSortState
@@ -57,10 +61,10 @@ export function PeriodReportItems({
 }) {
  return (
  <>
-  <div className="hidden overflow-hidden rounded-lg bg-card shadow-sm md:block">
+  <div className="hidden overflow-hidden rounded-xl bg-card shadow-sm md:block">
   <div className="overflow-x-auto">
    <table className="w-full min-w-[1120px] text-left text-sm">
-   <thead className="border-b border-subtle bg-surface text-xs uppercase text-muted bg-surface-2/60">
+   <thead className="border-b border-subtle bg-surface-2/50 text-xs uppercase text-muted">
     <tr>
     {columns.map((column) => (
      <th key={column.key} className="px-4 py-3 font-semibold">
@@ -86,7 +90,8 @@ export function PeriodReportItems({
     columns={columns}
     expandedBundles={expandedBundles}
     items={purchasedItems}
-    label="Purchased this period"
+    emptyText="No bought resale items settled in this range."
+    label="Bought this period"
     onOpenItem={onOpenItem}
     onToggleBundle={onToggleBundle}
     thumbnailByItemId={thumbnailByItemId}
@@ -97,7 +102,32 @@ export function PeriodReportItems({
     columns={columns}
     expandedBundles={expandedBundles}
     items={soldItems}
+    emptyText="No sold items in this range."
     label="Sold this period"
+    onOpenItem={onOpenItem}
+    onToggleBundle={onToggleBundle}
+    thumbnailByItemId={thumbnailByItemId}
+    />
+    <ReportSection
+    allItems={allItems}
+    childrenByBundle={childrenByBundle}
+    columns={columns}
+    expandedBundles={expandedBundles}
+    items={keptItems}
+    emptyText="No kept items in this range."
+    label="Kept this period"
+    onOpenItem={onOpenItem}
+    onToggleBundle={onToggleBundle}
+    thumbnailByItemId={thumbnailByItemId}
+    />
+    <ReportSection
+    allItems={allItems}
+    childrenByBundle={childrenByBundle}
+    columns={columns}
+    expandedBundles={expandedBundles}
+    items={holdingItems}
+    emptyText="No newly bought resale items are still in inventory."
+    label="Still in inventory"
     onOpenItem={onOpenItem}
     onToggleBundle={onToggleBundle}
     thumbnailByItemId={thumbnailByItemId}
@@ -112,8 +142,8 @@ export function PeriodReportItems({
    allItems={allItems}
    childrenByBundle={childrenByBundle}
    expandedBundles={expandedBundles}
-   items={purchasedItems}
-   label="Purchased this period"
+  items={purchasedItems}
+   label="Bought this period"
    onOpenItem={onOpenItem}
    onToggleBundle={onToggleBundle}
    thumbnailByItemId={thumbnailByItemId}
@@ -122,8 +152,28 @@ export function PeriodReportItems({
    allItems={allItems}
    childrenByBundle={childrenByBundle}
    expandedBundles={expandedBundles}
-   items={soldItems}
-   label="Sold this period"
+  items={soldItems}
+  label="Sold this period"
+   onOpenItem={onOpenItem}
+   onToggleBundle={onToggleBundle}
+   thumbnailByItemId={thumbnailByItemId}
+  />
+  <MobileSection
+   allItems={allItems}
+   childrenByBundle={childrenByBundle}
+   expandedBundles={expandedBundles}
+   items={keptItems}
+   label="Kept this period"
+   onOpenItem={onOpenItem}
+   onToggleBundle={onToggleBundle}
+   thumbnailByItemId={thumbnailByItemId}
+  />
+  <MobileSection
+   allItems={allItems}
+   childrenByBundle={childrenByBundle}
+   expandedBundles={expandedBundles}
+   items={holdingItems}
+   label="Still in inventory"
    onOpenItem={onOpenItem}
    onToggleBundle={onToggleBundle}
    thumbnailByItemId={thumbnailByItemId}
@@ -138,6 +188,7 @@ type ReportSectionProps = {
  childrenByBundle: Map<string, Item[]>
  expandedBundles: Set<string>
  items: Item[]
+ emptyText?: string
  label: string
  onOpenItem: (item: Item) => void
  onToggleBundle: (itemId: string) => void
@@ -150,20 +201,27 @@ function ReportSection({
  columns,
  expandedBundles,
  items,
+ emptyText,
  label,
  onOpenItem,
  onToggleBundle,
  thumbnailByItemId,
 }: ReportSectionProps & { columns: Array<{ key: ReportSortKey; label: string }> }) {
  if (items.length === 0) {
- return null
+ return (
+ <tr className="border-b border-subtle bg-card">
+  <td className="px-4 py-4" colSpan={columns.length}>
+  <SectionHeader count={0} emptyText={emptyText} label={label} />
+  </td>
+ </tr>
+ )
  }
 
  return (
  <>
-  <tr className="border-b border-subtle bg-surface-2/70">
-  <td className="px-4 py-2 text-xs font-semibold uppercase text-muted" colSpan={columns.length}>
-   {label}
+  <tr className="border-b border-subtle bg-card">
+  <td className="px-4 py-4" colSpan={columns.length}>
+   <SectionHeader count={items.length} label={label} />
   </td>
   </tr>
   {buildReportRows(items, childrenByBundle, expandedBundles).map(({ item, isChild }) => (
@@ -180,6 +238,28 @@ function ReportSection({
   />
   ))}
  </>
+ )
+}
+
+function SectionHeader({
+ count,
+ emptyText,
+ label,
+}: {
+ count: number
+ emptyText?: string
+ label: string
+}) {
+ return (
+ <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2/70 px-3 py-2">
+  <div>
+  <h2 className="text-sm font-semibold text-base">{label}</h2>
+  {emptyText ? <p className="mt-0.5 text-xs text-muted">{emptyText}</p> : null}
+  </div>
+  <span className="rounded-full bg-card px-2.5 py-1 text-xs font-medium text-muted">
+  {count}
+  </span>
+ </div>
  )
 }
 
@@ -210,12 +290,12 @@ function ReportRow({
  return (
  <tr
   className={cn(
-  'cursor-pointer border-b border-subtle transition hover:bg-accent-soft/70',
+  'cursor-pointer border-b border-subtle transition hover:bg-accent-soft/60',
   isChild && 'bg-surface-2/40',
   )}
   onClick={onOpen}
  >
-  <td className="px-4 py-4 font-medium text-base">
+  <td className="px-4 py-3.5 font-medium text-base">
   <NameCell
    childCount={childCount}
    isChild={isChild}
@@ -225,14 +305,14 @@ function ReportRow({
    thumbnail={thumbnail}
   />
   </td>
-  <td className="px-4 py-4 text-muted">{item.category || '--'}</td>
-  <td className="px-4 py-4">
+  <td className="px-4 py-3.5 text-muted">{item.category || '--'}</td>
+  <td className="px-4 py-3.5">
   <StatusBadge status={getEffectiveItemStatus(item, allItems)} />
   </td>
-  <td className="px-4 py-4 text-muted">{formatDateInputValue(item.bought_at)}</td>
-  <td className="px-4 py-4 text-muted">{formatDateInputValue(item.sold_at) || '--'}</td>
-  <td className="px-4 py-4">{formatCurrency(item.buy_price)}</td>
-  <td className={cn('px-4 py-4', isKeeper && 'text-muted')}>
+  <td className="px-4 py-3.5 text-muted">{formatDateInputValue(item.bought_at)}</td>
+  <td className="px-4 py-3.5 text-muted">{formatDateInputValue(item.sold_at) || '--'}</td>
+  <td className="px-4 py-3.5">{formatCurrency(item.buy_price)}</td>
+  <td className={cn('px-4 py-3.5', isKeeper && 'text-muted')}>
   {isKeeper ? (
    '--'
   ) : isChild ? (
@@ -244,7 +324,7 @@ function ReportRow({
    formatCurrency(sellValue)
   )}
   </td>
-  <td className={cn('px-4 py-4 font-semibold', isKeeper ? 'text-muted' : metricTextClassName(profit))}>
+  <td className={cn('px-4 py-3.5 font-semibold', isKeeper ? 'text-muted' : metricTextClassName(profit))}>
   {isChild ? (
    <span className="text-xs font-medium text-muted">{bundleChildAccountingNote}</span>
   ) : isKeeper || profit === null ? (
@@ -253,7 +333,7 @@ function ReportRow({
    formatCurrency(profit)
   )}
   </td>
-  <td className={cn('px-4 py-4 font-semibold', isKeeper ? 'text-muted' : metricTextClassName(roi))}>
+  <td className={cn('px-4 py-3.5 font-semibold', isKeeper ? 'text-muted' : metricTextClassName(roi))}>
   {isChild ? (
    <span className="text-xs font-medium text-muted">{bundleChildAccountingNote}</span>
   ) : isKeeper || roi === null ? (
