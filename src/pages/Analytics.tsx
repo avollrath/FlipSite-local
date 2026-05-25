@@ -142,6 +142,8 @@ export function Analytics() {
     buyPlatforms.length +
     sellPlatforms.length +
     statuses.length
+  const hasNoItems = items.length === 0
+  const hasNoFilteredItems = !hasNoItems && activeFilterCount > 0 && filteredItems.length === 0
 
   function clearFilters() {
     setDatePreset('all')
@@ -157,6 +159,23 @@ export function Analytics() {
     return <LoadingGrid />
   }
 
+  if (hasNoItems) {
+    return (
+      <section className="space-y-6">
+        <div>
+          <h1 className="text-4xl font-semibold tracking-tight">
+            Dashboard
+          </h1>
+          <p className="mt-2 text-sm text-muted">
+            See what you have made, what is still tied up, and which items need a decision.
+          </p>
+        </div>
+
+        <EmptyDashboardIntro onAddItem={() => navigate('/items')} />
+      </section>
+    )
+  }
+
   return (
     <section className="space-y-6">
       <div>
@@ -164,7 +183,7 @@ export function Analytics() {
           Dashboard
         </h1>
         <p className="mt-2 text-sm text-muted">
-          A quick view of profit, cash, inventory, and what needs attention.
+          See what you have made, what is still tied up, and which items need a decision.
         </p>
       </div>
 
@@ -190,21 +209,25 @@ export function Analytics() {
         onStatusesChange={setStatuses}
       />
 
+      {hasNoFilteredItems ? (
+        <EmptyFilteredState onClear={clearFilters} />
+      ) : null}
+
       <SectionHeading>Snapshot</SectionHeading>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <KPICard
-          title="Net Profit"
+          title="Money Made"
           value={dashboardMetrics.netProfit}
-          subtitle={`${dashboardMetrics.soldCount} sold resale items`}
+          subtitle={`Profit after buy cost from ${dashboardMetrics.soldCount} sold resale items`}
           icon={Banknote}
           trend={profitTrend(dashboardMetrics.netProfit)}
           color={dashboardMetrics.netProfit < 0 ? 'rose' : 'green'}
           formatter={formatCurrency}
         />
         <KPICard
-          title="Revenue"
+          title="Sales Collected"
           value={dashboardMetrics.revenue}
-          subtitle="Total sell price from sold items"
+          subtitle="Total sell price from sold resale items"
           icon={TrendingUp}
           trend={dashboardMetrics.revenue > 0 ? 'up' : 'neutral'}
           color="blue"
@@ -213,7 +236,7 @@ export function Analytics() {
         <KPICard
           title="Cash Tied Up"
           value={dashboardMetrics.cashTiedUp}
-          subtitle={`${dashboardMetrics.unsoldCount} unsold resale items`}
+          subtitle={`Buy cost still sitting in ${dashboardMetrics.unsoldCount} unsold resale items`}
           icon={Boxes}
           trend="neutral"
           color="amber"
@@ -223,7 +246,7 @@ export function Analytics() {
         <KPICard
           title="Keeping Value"
           value={dashboardMetrics.keepingValue}
-          subtitle="Buy price of items kept"
+          subtitle="Buy cost of items you chose to keep"
           icon={Heart}
           trend="neutral"
           color="violet"
@@ -233,7 +256,7 @@ export function Analytics() {
       </div>
 
       <SectionHeading>What needs attention</SectionHeading>
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         <KPICard
           icon={Package}
           title="Best Flip"
@@ -241,8 +264,8 @@ export function Analytics() {
           valueTitle={dashboardMetrics.bestFlip?.name}
           subtitle={
             dashboardMetrics.bestFlip
-              ? `${formatCurrency(dashboardMetrics.bestFlip.profit)} profit`
-              : 'Sell an item to unlock this'
+              ? `${formatCurrency(dashboardMetrics.bestFlip.profit)} profit from ${formatCurrency(dashboardMetrics.bestFlip.revenue)} revenue`
+              : 'Mark an item sold to see your strongest win'
           }
           trend={dashboardMetrics.bestFlip ? 'up' : 'neutral'}
           color="green"
@@ -259,8 +282,8 @@ export function Analytics() {
           valueTitle={dashboardMetrics.biggestLoss?.name}
           subtitle={
             dashboardMetrics.biggestLoss
-              ? `${formatCurrency(Math.abs(dashboardMetrics.biggestLoss.profit))} loss`
-              : 'Loss-making flips show up here'
+              ? `${formatCurrency(Math.abs(dashboardMetrics.biggestLoss.profit))} below buy cost`
+              : 'Loss-making flips will show up here'
           }
           trend={dashboardMetrics.biggestLoss ? 'down' : 'neutral'}
           color="rose"
@@ -272,12 +295,13 @@ export function Analytics() {
         />
         <KPICard
           icon={PackageSearch}
-          title="Unsold Inventory"
-          value={dashboardMetrics.unsoldCount}
+          title="Oldest Unsold"
+          value={truncateText(dashboardMetrics.oldestUnsoldItem?.name ?? 'All clear', 24)}
+          valueTitle={dashboardMetrics.oldestUnsoldItem?.name}
           subtitle={
             dashboardMetrics.oldestUnsoldItem
-              ? `${formatCurrency(dashboardMetrics.cashTiedUp)} tied up; oldest ${dashboardMetrics.oldestUnsoldItem.daysHeld}d`
-              : 'No resale inventory waiting'
+              ? `Held ${dashboardMetrics.oldestUnsoldItem.daysHeld}d; ${formatCurrency(dashboardMetrics.cashTiedUp)} tied up`
+              : 'No unsold resale inventory waiting'
           }
           trend="neutral"
           color="indigo"
@@ -474,6 +498,56 @@ function FilterBar({
         ) : null}
       </div>
     </div>
+  )
+}
+
+function EmptyDashboardIntro({ onAddItem }: { onAddItem: () => void }) {
+  return (
+    <article className="rounded-xl border border-accent/20 bg-card p-5 shadow-sm">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-widest text-accent">
+            Start here
+          </p>
+          <h2 className="mt-2 text-xl font-semibold text-base">
+            Add your first item to unlock the dashboard
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm text-muted">
+            Once you add items, this page will show money made, cash tied up,
+            best flips, losses, and the oldest inventory that may need action.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition hover:bg-accent/90"
+          onClick={onAddItem}
+        >
+          Add item
+        </button>
+      </div>
+    </article>
+  )
+}
+
+function EmptyFilteredState({ onClear }: { onClear: () => void }) {
+  return (
+    <article className="rounded-xl border border-dashed border-subtle bg-card p-5 text-sm text-muted shadow-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-semibold text-base">No dashboard data matches these filters</p>
+          <p className="mt-1">
+            Clear filters or widen the date range to bring your items back into view.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-border-base px-3 text-sm font-semibold text-base transition hover:border-accent/50 hover:text-accent"
+          onClick={onClear}
+        >
+          Clear filters
+        </button>
+      </div>
+    </article>
   )
 }
 
