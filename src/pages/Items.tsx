@@ -20,7 +20,6 @@ import {
 import { cn, getBuyPlatform, getStatusLabel } from "@/lib/utils";
 import {
   getActiveBundleIds,
-  getChildrenByBundle,
   getVisibleItems,
   getVisibleRows,
   uniqueItemValues,
@@ -31,6 +30,7 @@ import {
 import { downloadItemCsv } from "@/components/items/itemCsvExport";
 import { ItemTable } from "@/components/items/ItemTable";
 import { ItemGallery } from "@/components/items/ItemGallery";
+import { createItemIndex } from "@/domain/items/itemIndex";
 import type { Item } from "@/types";
 
 type DrawerState =
@@ -126,7 +126,8 @@ export function Items() {
     () => uniqueItemValues(items.map((item) => item.category)),
     [items],
   );
-  const childrenByBundle = useMemo(() => getChildrenByBundle(items), [items]);
+  const itemIndex = useMemo(() => createItemIndex(items), [items]);
+  const childrenByBundle = itemIndex.childrenByBundleId;
   const activeBundleIds = useMemo(
     () => getActiveBundleIds(items, childrenByBundle),
     [childrenByBundle, items],

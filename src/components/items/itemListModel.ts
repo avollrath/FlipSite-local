@@ -9,6 +9,7 @@ import {
  getStatusLabel,
  isKeepingItem,
 } from '@/lib/utils'
+import { createItemIndex } from '@/domain/items/itemIndex'
 import type { Item, ItemStatus } from '@/types'
 
 export type SortKey =
@@ -49,16 +50,7 @@ export type ItemListRow = {
 }
 
 export function getChildrenByBundle(items: Item[]) {
- return items.reduce((map, item) => {
- if (!item.bundle_id) {
- return map
- }
-
- const children = map.get(item.bundle_id) ?? []
- children.push(item)
- map.set(item.bundle_id, children)
- return map
- }, new Map<string, Item[]>())
+ return createItemIndex(items).childrenByBundleId
 }
 
 export function getActiveBundleIds(items: Item[], childrenByBundle = getChildrenByBundle(items)) {

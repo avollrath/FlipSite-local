@@ -1,5 +1,6 @@
 import { normalizeItemCondition } from '@/lib/conditions'
 import { parseMoneyInput } from '@/lib/utils'
+import { createItemIndex } from '@/domain/items/itemIndex'
 import type { ItemUpdate, NewBundleChild, NewItem } from '@/hooks/useItems'
 import type { Item } from '@/types'
 import type { BundleChildForm } from '@/components/items/BundleEditor'
@@ -26,8 +27,7 @@ export function getInitialBundleChildren(
  return []
  }
 
- return items
- .filter((child) => child.bundle_id === item.tsid)
+ return (createItemIndex(items).childrenByBundleId.get(item.tsid) ?? [])
  .map((child) => ({
  id: child.tsid,
  tsid: child.tsid,

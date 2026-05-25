@@ -4,10 +4,6 @@ import {
   calculateItemSellValue,
   getFlippingAggregateItems,
   getEffectiveItemStatus,
-  getKeeperItems,
-  getSoldAggregateItems,
-  getUnsoldResaleItems,
-  isAggregateItem,
   isKeepingItem,
 } from '@/lib/itemAccounting'
 import {
@@ -16,6 +12,7 @@ import {
   sumCurrency,
 } from '@/lib/utils'
 import { toMonthKey } from '@/lib/dateUtils'
+import { createItemIndex } from '@/domain/items/itemIndex'
 import type { Item } from '@/types'
 
 export type ChartDatum = {
@@ -91,8 +88,9 @@ export type DashboardMetrics = {
 }
 
 export function buildSummary(items: Item[]): AnalyticsSummary {
-  const soldItems = getSoldAggregateItems(items)
-  const activeItems = getUnsoldResaleItems(items)
+  const itemIndex = createItemIndex(items)
+  const soldItems = itemIndex.soldAggregateItems
+  const activeItems = itemIndex.unsoldResaleItems
   const soldStats = soldItems.map((item) => {
     const profit = calculateItemProfit(item, items) ?? 0
     const roi = calculateItemROI(item, items) ?? 0
@@ -134,9 +132,10 @@ export function buildDashboardMetrics(items: Item[]): DashboardMetrics {
   // - sold metrics use aggregate resale items with effective status "sold" and real sell value.
   // - unsold cash excludes keepers and bundle children, then uses buy price for holding/listed resale items.
   // - keeping value is buy price for aggregate items marked keeper/keeping.
-  const soldItems = getSoldAggregateItems(items)
-  const unsoldItems = getUnsoldResaleItems(items)
-  const keepingItems = getKeeperItems(items)
+  const itemIndex = createItemIndex(items)
+  const soldItems = itemIndex.soldAggregateItems
+  const unsoldItems = itemIndex.unsoldResaleItems
+  const keepingItems = itemIndex.keeperItems
   const soldStats = soldItems.map((item) => ({
     item,
     profit: calculateItemProfit(item, items) ?? 0,
@@ -227,7 +226,7 @@ export function buildProfitByPlatform(items: Item[]): ChartDatum[] {
 }
 
 export function buildTopFlips(items: Item[], count = 8) {
-  return getSoldAggregateItems(items)
+  return createItemIndex(items).soldAggregateItems
     .map((item) => ({
       name: item.name,
       profit: calculateItemProfit(item, items) ?? 0,
@@ -239,7 +238,7 @@ export function buildTopFlips(items: Item[], count = 8) {
 export function buildRoiDistribution(items: Item[]): ChartDatum[] {
   const roisByCategory = new Map<string, number[]>()
 
-  for (const item of getSoldAggregateItems(items)) {
+  for (const item of createItemIndex(items).soldAggregateItems) {
     const roi = calculateItemROI(item, items)
 
     if (roi === null) {
@@ -257,7 +256,7 @@ export function buildRoiDistribution(items: Item[]): ChartDatum[] {
 }
 
 export function buildDurationProfit(items: Item[]): DurationProfitDatum[] {
-  return getSoldAggregateItems(items)
+  return createItemIndex(items).soldAggregateItems
     .map((item) => {
       const soldAt = getEffectiveSoldAt(item, items)
       const boughtAt = item.bought_at
@@ -276,7 +275,7 @@ export function buildDurationProfit(items: Item[]): DurationProfitDatum[] {
 }
 
 export function buildCumulativeProfit(items: Item[]): CumulativeProfitDatum[] {
-  const soldItems = getSoldAggregateItems(items).sort(
+  const soldItems = createItemIndex(items).soldAggregateItems.sort(
     (a, b) => dateValue(getEffectiveSoldAt(a, items)) - dateValue(getEffectiveSoldAt(b, items)),
   )
   const totalProfit = sumCurrency(
@@ -297,11 +296,12 @@ export function buildCumulativeProfit(items: Item[]): CumulativeProfitDatum[] {
 
 export function buildCategoryStats(items: Item[]): CategoryStat[] {
   const categoryNames = uniqueValues(items.map((item) => item.category))
+  const aggregateIds = new Set(createItemIndex(items).aggregateItems.map((item) => item.tsid))
 
   return categoryNames
     .map((category) => {
       const categoryItems = items.filter((item) => item.category === category)
-      const aggregateItems = categoryItems.filter(isAggregateItem)
+      const aggregateItems = categoryItems.filter((item) => aggregateIds.has(item.tsid))
       const flippingAggregateItems = aggregateItems.filter((item) => !isKeepingItem(item))
 
       return {
@@ -329,7 +329,7 @@ export function buildCategoryStats(items: Item[]): CategoryStat[] {
 function buildProfitBreakdown(items: Item[], getLabel: (item: Item) => string): ChartDatum[] {
   const data = new Map<string, number>()
 
-  for (const item of getSoldAggregateItems(items)) {
+  for (const item of createItemIndex(items).soldAggregateItems) {
     const label = getLabel(item)
     data.set(label, sumCurrency([data.get(label) ?? 0, calculateItemProfit(item, items)]))
   }

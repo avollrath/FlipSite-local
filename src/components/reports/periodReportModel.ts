@@ -6,7 +6,7 @@ import {
  isKeepingItem,
 } from '@/lib/itemAccounting'
 import { formatCurrency, getStatusLabel, sumCurrency } from '@/lib/utils'
-import { getChildrenByBundle } from '@/components/items/itemListModel'
+import { createItemIndex } from '@/domain/items/itemIndex'
 import type { Item } from '@/types'
 
 export type Period =
@@ -339,7 +339,9 @@ export function isDateInRange(value: string | null | undefined, range: DateRange
  return date >= range.from && date <= range.to
 }
 
-export { getChildrenByBundle }
+export function getChildrenByBundle(items: Item[]) {
+ return createItemIndex(items).childrenByBundleId
+}
 
 export function sortReportItems(items: Item[], sort: ReportSortState, allItems: Item[]) {
  return [...items].sort((a, b) => {

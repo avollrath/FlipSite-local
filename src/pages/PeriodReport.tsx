@@ -15,7 +15,6 @@ import { formatDateInputValue } from '@/lib/dateInput'
 import {
   buildReportRows,
   buildReportSummary,
-  getChildrenByBundle,
   getCustomRange,
   getPeriodItems,
   getPeriodRange,
@@ -27,6 +26,7 @@ import {
   type ReportSummary,
 } from '@/components/reports/periodReportModel'
 import { PeriodReportItems } from '@/components/reports/PeriodReportItems'
+import { createItemIndex } from '@/domain/items/itemIndex'
 import type { Item } from '@/types'
 
 const periodOptions: Array<{ label: string; value: Period }> = [
@@ -80,7 +80,8 @@ export function PeriodReport() {
         : getPeriodRange(period),
     [customFrom, customTo, period],
   )
-  const childrenByBundle = useMemo(() => getChildrenByBundle(items), [items])
+  const itemIndex = useMemo(() => createItemIndex(items), [items])
+  const childrenByBundle = itemIndex.childrenByBundleId
   const periodItems = useMemo(
     () => getPeriodItems(items, range),
     [items, range],
