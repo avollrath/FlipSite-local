@@ -205,21 +205,64 @@ export function Settings() {
  }
 
  return (
- <section className="space-y-6">
+ <section className="space-y-7">
  <div>
   <h1 className="text-4xl font-semibold tracking-tight">
   Settings
   </h1>
+  <p className="mt-2 text-sm text-muted">
+  Customize your FlipSite experience and defaults.
+  </p>
  </div>
 
- <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+ <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[1.35fr_0.65fr]">
   <Panel
   icon={UserRound}
-  title="Profile & Account"
-  description="Your identity and login details."
+  title="Account"
+  description="Profile image, display name, and login details."
+  className="h-full"
   >
-  <div className="flex flex-col-reverse items-start gap-6 sm:flex-row sm:gap-8">
-   <div className="flex w-full max-w-xs flex-1 flex-col gap-4">
+  <div className="flex flex-col gap-5 md:flex-row md:items-center">
+   <div className="flex shrink-0 flex-col items-center gap-2">
+   <button
+   type="button"
+   className="group relative flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-surface-2 ring-1 ring-border-base transition hover:ring-accent/40"
+   onClick={() => avatarInputRef.current?.click()}
+   aria-label="Upload profile image"
+   disabled={isAvatarUploading}
+   >
+   {avatarUrl ? (
+    <img
+    src={avatarUrl}
+    alt="Profile avatar"
+    className="h-full w-full object-cover"
+    />
+   ) : (
+    <span className="text-3xl font-semibold text-accent">
+    {fallbackInitial}
+    </span>
+   )}
+   <span className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity group-hover:opacity-100">
+    <Camera className="h-5 w-5 text-white" aria-hidden="true" />
+   </span>
+   </button>
+   <button
+   type="button"
+   className="text-xs font-medium text-muted transition hover:text-accent"
+   onClick={() => avatarInputRef.current?.click()}
+   disabled={isAvatarUploading}
+   >
+   Change photo
+   </button>
+   <input
+   ref={avatarInputRef}
+   className="hidden"
+   type="file"
+   accept="image/*"
+   onChange={handleAvatarFileChange}
+   />
+   </div>
+   <div className="grid min-w-0 flex-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(180px,0.7fr)]">
    <div className="flex flex-col gap-1.5">
     <label className="text-xs font-medium uppercase tracking-wide text-muted">
     Username
@@ -238,7 +281,7 @@ export function Settings() {
     </label>
     <p className="truncate text-sm text-muted">{user?.email ?? ''}</p>
    </div>
-   <div className="flex items-center gap-3">
+   <div className="flex items-center gap-3 md:col-span-2">
     <button
     type="button"
     className="h-9 rounded-md bg-accent px-4 text-sm font-medium text-accent-fg transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-70"
@@ -246,54 +289,17 @@ export function Settings() {
     disabled={isProfileSaving || isAvatarUploading}
     >
     {isProfileSaving ? 'Saving...' : 'Save'}
-    </button>
+   </button>
     {profileSaved ? <span className="text-xs text-positive">Saved</span> : null}
-   </div>
-   <div className="border-t border-subtle pt-2">
-    <p className="text-xs text-muted">
-    Signed in as {user?.email}
-    </p>
     <button
     type="button"
-    className="mt-1 flex items-center gap-1.5 text-xs text-muted transition hover:text-base"
+    className="ml-auto inline-flex items-center gap-1.5 text-xs font-medium text-muted transition hover:text-base"
     onClick={handleSignOut}
     >
     <LogOut className="h-3 w-3" aria-hidden="true" />
     Sign out
     </button>
    </div>
-   </div>
-   <div className="flex shrink-0 flex-col items-center gap-3 border-l border-subtle pl-8">
-   <button
-   type="button"
-   className="group relative flex h-36 w-36 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-surface-2"
-   onClick={() => avatarInputRef.current?.click()}
-   aria-label="Upload profile image"
-   disabled={isAvatarUploading}
-   >
-   {avatarUrl ? (
-    <img
-    src={avatarUrl}
-    alt="Profile avatar"
-    className="h-full w-full object-cover"
-    />
-   ) : (
-    <span className="text-4xl font-semibold text-accent">
-    {fallbackInitial}
-    </span>
-   )}
-   <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-    <Camera className="h-6 w-6 text-white" aria-hidden="true" />
-   </span>
-   </button>
-   <p className="text-xs text-muted">Click to change</p>
-   <input
-   ref={avatarInputRef}
-   className="hidden"
-   type="file"
-   accept="image/*"
-   onChange={handleAvatarFileChange}
-   />
    </div>
   </div>
   </Panel>
@@ -302,12 +308,13 @@ export function Settings() {
   icon={ShieldAlert}
   title="Danger Zone"
   description="Account deletion is intentionally not available here."
+  subtle
   >
   <p className="text-sm text-muted ">
   Export your inventory before deleting or migrating any data. Use the
   Import / Export page to download a CSV backup first.
   </p>
-  </Panel>
+ </Panel>
  </div>
 
  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -369,7 +376,7 @@ export function Settings() {
 
  <Panel
   icon={MonitorCog}
-  title="Defaults"
+  title="Item Defaults"
   description="Stored locally in this browser. Defaults apply to new items only."
  >
   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -452,18 +459,20 @@ function Panel({
  className = '',
  description,
  icon: Icon,
+ subtle = false,
  title,
 }: {
  children: React.ReactNode
  className?: string
  description: string
  icon: typeof UserRound
+ subtle?: boolean
  title: string
 }) {
  return (
- <article className={`rounded-lg bg-card p-5 shadow-sm ${className}`}>
+ <article className={`rounded-xl bg-card p-5 shadow-sm ${subtle ? 'bg-card/70 shadow-none ring-1 ring-border-base/60' : ''} ${className}`}>
  <div className="mb-5 flex items-start gap-3">
-  <span className="grid h-10 w-10 place-items-center rounded-lg bg-accent-soft text-accent bg-accent/15 ">
+  <span className={`grid h-10 w-10 place-items-center rounded-lg ${subtle ? 'bg-surface-2 text-muted' : 'bg-accent/10 text-accent'}`}>
   <Icon className="h-5 w-5" aria-hidden="true" />
   </span>
   <div>
