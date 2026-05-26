@@ -205,7 +205,7 @@ export function Settings() {
  }
 
  return (
- <section className="space-y-7">
+ <section className="mx-auto max-w-5xl space-y-7">
  <div>
   <h1 className="text-4xl font-semibold tracking-tight">
   Settings
@@ -215,18 +215,17 @@ export function Settings() {
   </p>
  </div>
 
- <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[1.35fr_0.65fr]">
+ <div className="space-y-5">
   <Panel
   icon={UserRound}
   title="Account"
   description="Profile image, display name, and login details."
-  className="h-full"
   >
-  <div className="flex flex-col gap-5 md:flex-row md:items-center">
-   <div className="flex shrink-0 flex-col items-center gap-2">
+  <div className="grid gap-5 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
+   <div className="flex items-center gap-4 md:block md:space-y-2">
    <button
    type="button"
-   className="group relative flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-surface-2 ring-1 ring-border-base transition hover:ring-accent/40"
+   className="group relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-surface-2 ring-1 ring-border-base transition hover:ring-accent/40"
    onClick={() => avatarInputRef.current?.click()}
    aria-label="Upload profile image"
    disabled={isAvatarUploading}
@@ -248,7 +247,7 @@ export function Settings() {
    </button>
    <button
    type="button"
-   className="text-xs font-medium text-muted transition hover:text-accent"
+   className="text-xs font-medium text-muted transition hover:text-accent md:w-full"
    onClick={() => avatarInputRef.current?.click()}
    disabled={isAvatarUploading}
    >
@@ -262,7 +261,8 @@ export function Settings() {
    onChange={handleAvatarFileChange}
    />
    </div>
-   <div className="grid min-w-0 flex-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(180px,0.7fr)]">
+   <div className="min-w-0 space-y-4">
+   <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.75fr)]">
    <div className="flex flex-col gap-1.5">
     <label className="text-xs font-medium uppercase tracking-wide text-muted">
     Username
@@ -281,7 +281,8 @@ export function Settings() {
     </label>
     <p className="truncate text-sm text-muted">{user?.email ?? ''}</p>
    </div>
-   <div className="flex items-center gap-3 md:col-span-2">
+   </div>
+   <div className="flex flex-wrap items-center gap-3 border-t border-subtle pt-4">
     <button
     type="button"
     className="h-9 rounded-md bg-accent px-4 text-sm font-medium text-accent-fg transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-70"
@@ -293,7 +294,7 @@ export function Settings() {
     {profileSaved ? <span className="text-xs text-positive">Saved</span> : null}
     <button
     type="button"
-    className="ml-auto inline-flex items-center gap-1.5 text-xs font-medium text-muted transition hover:text-base"
+    className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-muted transition hover:bg-surface-2 hover:text-base md:ml-auto"
     onClick={handleSignOut}
     >
     <LogOut className="h-3 w-3" aria-hidden="true" />
@@ -303,28 +304,18 @@ export function Settings() {
    </div>
   </div>
   </Panel>
-
-  <Panel
-  icon={ShieldAlert}
-  title="Danger Zone"
-  description="Account deletion is intentionally not available here."
-  subtle
-  >
-  <p className="text-sm text-muted ">
-  Export your inventory before deleting or migrating any data. Use the
-  Import / Export page to download a CSV backup first.
-  </p>
- </Panel>
- </div>
-
- <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
   <Panel
   icon={MonitorCog}
-  title="Appearance"
-  description="Light/dark mode and palette are saved separately."
-  className="h-full"
+  title="Personalization"
+  description="Adjust the app theme, color, and typography."
   >
-  <div className="grid h-10 grid-cols-2 rounded-lg bg-surface-2 p-1">
+  <div className="space-y-6">
+  <div>
+  <div className="mb-3">
+   <h4 className="text-sm font-semibold text-base">Appearance</h4>
+   <p className="mt-1 text-xs text-muted">Choose the mode and accent color.</p>
+  </div>
+  <div className="grid h-10 max-w-sm grid-cols-2 rounded-lg bg-surface-2 p-1">
   {(['light', 'dark'] as const).map((option) => (
    <button
    key={option}
@@ -340,7 +331,7 @@ export function Settings() {
    </button>
   ))}
   </div>
-  <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+  <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
   {themeOptions.map((option) => (
              <ThemeSwatch
               key={option.value}
@@ -352,14 +343,15 @@ export function Settings() {
              />
   ))}
   </div>
-  </Panel>
-
-  <Panel
-  icon={TypeIcon}
-  title="Typography"
-  description="Choose the font used throughout the app."
-  className="h-full"
-  >
+  </div>
+  <div className="border-t border-subtle pt-5">
+  <div className="mb-3 flex items-start gap-2">
+   <TypeIcon className="mt-0.5 h-4 w-4 text-muted" aria-hidden="true" />
+   <div>
+   <h4 className="text-sm font-semibold text-base">Typography</h4>
+   <p className="mt-1 text-xs text-muted">Choose the app font.</p>
+   </div>
+  </div>
   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
   {fontOptions.map((option) => (
    <FontSwatch
@@ -371,8 +363,10 @@ export function Settings() {
    />
   ))}
   </div>
-  </Panel>
   </div>
+  </div>
+  </Panel>
+ </div>
 
  <Panel
   icon={MonitorCog}
@@ -441,6 +435,18 @@ export function Settings() {
    <span className="text-xs text-positive transition-opacity">Saved</span>
   ) : null}
   </div>
+ </Panel>
+
+ <Panel
+  icon={ShieldAlert}
+  title="Advanced"
+  description="Low-frequency account and data safety notes."
+  subtle
+ >
+  <p className="text-sm text-muted ">
+  Account deletion is intentionally not available here. Export your inventory
+  before deleting or migrating any data.
+  </p>
  </Panel>
 
  {cropImageSrc ? (
