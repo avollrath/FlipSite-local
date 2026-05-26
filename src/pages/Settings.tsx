@@ -324,12 +324,12 @@ export function Settings() {
   description="Light/dark mode and palette are saved separately."
   className="h-full"
   >
-  <div className="grid h-11 grid-cols-2 rounded-lg border border-layout bg-surface-2 p-1">
+  <div className="grid h-10 grid-cols-2 rounded-lg bg-surface-2 p-1">
   {(['light', 'dark'] as const).map((option) => (
    <button
    key={option}
    type="button"
-   className={`rounded-md px-3 text-sm font-semibold capitalize transition ${
+   className={`rounded-md px-3 text-sm font-medium capitalize transition ${
    mode === option
     ? 'bg-card text-accent shadow-sm'
     : 'text-muted hover:text-base'
@@ -340,7 +340,7 @@ export function Settings() {
    </button>
   ))}
   </div>
-  <div className="mt-5 grid grid-cols-4 gap-3">
+  <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
   {themeOptions.map((option) => (
              <ThemeSwatch
               key={option.value}
@@ -360,7 +360,7 @@ export function Settings() {
   description="Choose the font used throughout the app."
   className="h-full"
   >
-  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
   {fontOptions.map((option) => (
    <FontSwatch
    key={option.value}
@@ -551,28 +551,28 @@ function ThemeSwatch({
  return (
  <button
  type="button"
- className={`rounded-lg border p-2 text-left transition ${
+ className={`rounded-lg border p-2 text-left transition focus:outline-none focus:ring-4 focus:ring-accent/10 ${
   active
-  ? 'border-accent ring-4 ring-accent/15'
-  : 'border-layout hover:border-accent/50'
+  ? 'border-accent/40 bg-accent/5'
+  : 'border-transparent bg-surface-2/70 hover:border-accent/25 hover:bg-card'
  }`}
  onClick={onSelect}
  aria-pressed={active}
  >
       <span
-      className={`grid h-14 overflow-hidden rounded-md border border-layout ${
+      className={`grid h-10 overflow-hidden rounded-md border border-border-base/70 ${
        mode === 'dark' ? 'dark' : ''
       }`}
       data-theme={theme}
       >
   <span className="flex bg-surface">
-  <span className="w-4 bg-sidebar" />
+  <span className="w-3 bg-sidebar" />
   <span className="flex flex-1 items-center justify-center bg-card">
-  <span className="h-2 w-8 rounded-full bg-accent" />
+  <span className="h-1.5 w-7 rounded-full bg-accent" />
   </span>
   </span>
  </span>
- <span className="mt-2 flex items-center justify-between gap-2 text-xs font-semibold text-base">
+ <span className="mt-2 flex items-center justify-between gap-2 text-xs font-medium text-base">
   {label}
   {active ? <Check className="h-3.5 w-3.5 text-accent" aria-hidden="true" /> : null}
  </span>
@@ -594,10 +594,10 @@ function FontSwatch({
  return (
  <button
  type="button"
- className={`relative rounded-lg border p-3 text-left transition hover:bg-surface-2 ${
+ className={`relative rounded-lg border p-3 text-left transition focus:outline-none focus:ring-4 focus:ring-accent/10 ${
   active
-  ? 'border-accent ring-2 ring-accent'
-  : 'border-layout hover:border-accent/50'
+  ? 'border-accent/40 bg-accent/5'
+  : 'border-transparent bg-surface-2/70 hover:border-accent/25 hover:bg-card'
  }`}
  onClick={onSelect}
  aria-pressed={active}
@@ -610,13 +610,13 @@ function FontSwatch({
  ) : null}
  <span className="block pr-5 text-xs font-medium text-muted">{label}</span>
  <span
-  className="mt-3 block text-xl font-medium text-base"
+  className="mt-2 block text-lg font-medium text-base"
   style={{ fontFamily: family }}
  >
   AaBbCc
  </span>
  <span
-  className="mt-1 block text-sm text-muted"
+  className="mt-0.5 block text-xs text-muted"
   style={{ fontFamily: family }}
  >
   12345
