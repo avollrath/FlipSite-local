@@ -429,16 +429,16 @@ export function Settings() {
   </select>
   </Field>
   </div>
-  <div className="mt-4 flex items-center gap-3">
+  <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-subtle pt-4">
   <button
    type="button"
-   className="rounded-lg border border-border-base px-4 py-2.5 text-sm font-semibold text-base transition hover:bg-surface-2"
+   className="rounded-lg border border-border-base px-3 py-2 text-sm font-medium text-muted transition hover:border-accent/30 hover:text-base"
    onClick={resetDefaults}
   >
    Reset defaults
   </button>
   {saved ? (
-   <span className="text-xs text-muted transition-opacity">✓ Saved</span>
+   <span className="text-xs text-positive transition-opacity">Saved</span>
   ) : null}
   </div>
  </Panel>
@@ -496,7 +496,7 @@ function Field({
 }) {
  return (
  <label className="block">
- <span className="text-sm font-medium text-base ">
+ <span className="text-xs font-medium uppercase tracking-wide text-muted">
   {label}
  </span>
  <span className="mt-2 block">{children}</span>
@@ -626,7 +626,7 @@ function FontSwatch({
 }
 
 const inputClassName =
- 'h-11 w-full rounded-lg border border-border-base bg-card px-3 text-sm text-base outline-none transition placeholder:text-muted read-only:bg-surface-2 focus:border-accent focus:ring-4 focus:ring-accent/10'
+ 'h-10 w-full rounded-lg border border-border-base bg-card px-3 text-sm text-base outline-none transition placeholder:text-muted read-only:bg-surface-2 hover:border-accent/30 focus:border-accent focus:ring-4 focus:ring-accent/10'
 const selectClassName = `${inputClassName} truncate pr-10`
 
 function getAvatarUrl(avatarUrl: string | null | undefined, updatedAt: string | null | undefined) {
