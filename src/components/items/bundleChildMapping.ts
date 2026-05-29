@@ -40,7 +40,7 @@ export function getInitialBundleChildren(
 }
 
 export function createEmptyBundleChild(
- generateId: () => string = crypto.randomUUID,
+ generateId: () => string = () => crypto.randomUUID(),
 ): BundleChildForm {
  return {
  id: generateId(),

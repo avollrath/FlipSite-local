@@ -82,6 +82,17 @@ describe('bundle child mapping helpers', () => {
  })
  })
 
+ it('creates empty bundle child form rows with the default id generator', () => {
+ expect(createEmptyBundleChild()).toMatchObject({
+  name: '',
+  category: '',
+  condition: 'Good',
+  status: 'holding',
+  buy_price: '',
+ })
+ expect(createEmptyBundleChild().id).toEqual(expect.any(String))
+ })
+
  it('normalizes bundle children and skips unnamed rows', () => {
  expect(
   normalizeBundleChildren([
