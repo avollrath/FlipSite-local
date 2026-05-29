@@ -66,7 +66,9 @@ export function ItemTable({
    {columns.map((column) => (
     <th
     key={column.key}
-    className="px-4 py-3 font-semibold"
+    className={`px-4 py-3 font-semibold ${
+     column.key === 'actions' ? 'sticky right-0 z-20 bg-surface-2/95 shadow-[-12px_0_18px_-18px_rgba(15,23,42,0.45)]' : ''
+    }`}
     >
     {column.key === 'actions' ? (
      column.label
@@ -156,7 +158,7 @@ function ItemRow({
 
  return (
  <tr
-  className={`cursor-pointer transition hover:bg-accent-soft/70 ${
+  className={`group cursor-pointer transition hover:bg-accent-soft/70 ${
   isChild ? 'bg-surface/70 bg-surface-2/40' : ''
   }`}
   onClick={onEdit}
@@ -255,7 +257,11 @@ function ItemRow({
   <td className="px-4 py-4 text-muted ">
   {formatDate(item.sold_at) || '--'}
   </td>
-  <td className="px-4 py-4">
+  <td
+  className={`sticky right-0 z-10 px-4 py-4 shadow-[-12px_0_18px_-18px_rgba(15,23,42,0.45)] transition group-hover:bg-accent-soft/70 ${
+   isChild ? 'bg-surface-2' : 'bg-card'
+  }`}
+  >
   <div className="flex items-center gap-1">
    <button
    type="button"

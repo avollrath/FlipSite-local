@@ -397,9 +397,9 @@ export function Items() {
           </div>
         </div>
 
-        <div className="rounded-xl bg-card px-3 py-2 shadow-sm">
-          <div className="flex flex-col gap-2 xl:flex-row xl:items-center">
-            <label className="relative block min-w-0 xl:w-[360px] xl:flex-none 2xl:w-[420px]">
+        <div className="max-w-full rounded-xl bg-card px-3 py-2 shadow-sm">
+          <div className="flex min-w-0 flex-col gap-2 xl:flex-row xl:flex-wrap xl:items-center">
+            <label className="relative block min-w-0 xl:w-[320px] xl:flex-none 2xl:w-[360px]">
                 <Search
                   className="absolute w-4 h-4 -translate-y-1/2 pointer-events-none left-3 top-1/2 text-muted"
                   aria-hidden="true"
@@ -412,7 +412,7 @@ export function Items() {
                 />
               </label>
 
-            <div className="flex flex-col gap-2 sm:flex-row xl:flex-none">
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap xl:flex-1">
                 <FilterSelect
                   label="Status"
                   value={statusFilter}
@@ -457,7 +457,7 @@ export function Items() {
                 />
               </div>
 
-            <div className="flex flex-wrap items-center gap-1.5 xl:flex-nowrap">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
               <ToggleChip
                 active={inventoryOnly}
                 label="Inventory"
