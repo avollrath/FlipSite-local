@@ -20,7 +20,7 @@ export function Field({
 }) {
  return (
  <label className="block">
- <span className="text-sm font-medium text-base ">
+ <span className="text-xs font-medium text-muted">
   {label}
   {required ? <span className="text-accent"> *</span> : null}
  </span>

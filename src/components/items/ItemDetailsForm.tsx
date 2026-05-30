@@ -151,12 +151,14 @@ export function ItemDetailsForm({
    onClick={markAsSold}
   >
    <CircleCheck className="h-4 w-4" aria-hidden="true" />
-   Sold
+   Mark as Sold
   </button>
   )}
  </div>
+ </div>
 
  {showSellFields ? (
+ <div className="grid gap-4 sm:grid-cols-2">
   <Field label="Sell Price" required={form.status === 'sold'}>
   <input
    ref={sellPriceInputRef}
@@ -171,11 +173,8 @@ export function ItemDetailsForm({
   required={form.status === 'sold'}
   />
   </Field>
- ) : null}
- </div>
 
- {showSellFields ? (
- <Field label="Sold on">
+  <Field label="Sold on">
   <SuggestionCombobox
   label="Sold on"
   options={platforms}
@@ -183,7 +182,8 @@ export function ItemDetailsForm({
   onChange={(value) => updateField('sell_platform', value)}
   placeholder="Type or select a sales channel"
   />
- </Field>
+  </Field>
+ </div>
  ) : null}
 
  <div className="grid gap-4 sm:grid-cols-2">
