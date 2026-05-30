@@ -150,7 +150,7 @@ function PendingItemFileRow({
  const isImage = file.type.startsWith('image/')
 
  return (
- <div className="flex items-center gap-3 rounded-lg bg-surface-2/50 p-3">
+ <div className="flex items-center gap-3 rounded-lg border border-border-base bg-card p-3">
  <div className="grid h-14 w-14 shrink-0 place-items-center rounded-lg bg-surface-2 text-muted ">
   {isImage ? (
   <ImageIcon className="h-6 w-6" aria-hidden="true" />
@@ -433,7 +433,7 @@ function ItemFileRow({
  const displayName = file.original_name || getFileNameFromPath(file.file_path)
 
  return (
- <div className="flex items-center gap-3 rounded-lg bg-surface-2/50 p-3">
+ <div className="flex items-center gap-3 rounded-lg border border-border-base bg-card p-3">
  {isImage ? (
   <button
   type="button"
