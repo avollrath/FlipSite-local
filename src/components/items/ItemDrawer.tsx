@@ -1,6 +1,7 @@
-import { Loader2, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Image as ImageIcon, Loader2, Trash2 } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
+ useCallback,
  useEffect,
  useMemo,
  useRef,
@@ -46,6 +47,8 @@ import {
 import { useDemoGuard } from '@/hooks/useDemoGuard'
 import {
  uploadItemFile,
+ getSignedItemFileUrl,
+ type ItemFile,
 } from '@/lib/itemFiles'
 import { itemConditions } from '@/lib/conditions'
 import {
@@ -111,6 +114,7 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
  const [bundleChildren, setBundleChildren] = useState<BundleChildForm[]>(() =>
  getInitialBundleChildren(item, items),
  )
+ const [imageFiles, setImageFiles] = useState<ItemFile[]>([])
 
  const categories = useMemo(
  () => uniqueTextValues(items.map((existingItem) => existingItem.category)),
@@ -159,6 +163,9 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
  updateItem.isPending ||
  isUploadingPendingFiles
  const isDeleting = deleteItem.isPending
+ const handleImageFilesChange = useCallback((files: ItemFile[]) => {
+ setImageFiles(files)
+ }, [])
 
  useEffect(() => {
  if (!shouldFocusSellPrice || !showSellFields || !sellPriceInputRef.current) {
@@ -331,6 +338,9 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
 
  <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
   <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
+  {mode === 'edit' && item ? (
+  <ItemImageCarousel files={imageFiles} />
+  ) : null}
   <ItemDetailsForm
    categories={categories}
    conditionOptions={conditionOptions}
@@ -388,7 +398,10 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
   ) : null}
 
   {mode === 'edit' && item ? (
-  <ExistingFilesSection itemId={item.tsid} />
+  <ExistingFilesSection
+   itemId={item.tsid}
+   onImageFilesChange={handleImageFilesChange}
+  />
   ) : (
   <PendingFilesSection
    disabled={isSubmitting}
@@ -469,6 +482,124 @@ function getPreviewProfit({
  }
 
  return calcProfit(buyPrice, sellPrice)
+}
+
+function ItemImageCarousel({ files }: { files: ItemFile[] }) {
+ const [activeIndex, setActiveIndex] = useState(0)
+ const [images, setImages] = useState<Array<{ alt: string; id: string; src: string }>>([])
+ const [failed, setFailed] = useState(false)
+ const hasMultipleImages = images.length > 1
+ const activeImage = images[activeIndex]
+
+ useEffect(() => {
+ let mounted = true
+
+ async function loadImages() {
+ setFailed(false)
+
+ if (files.length === 0) {
+  setImages([])
+  setActiveIndex(0)
+  return
+ }
+
+ try {
+  const signedImages = await Promise.all(
+  files.map(async (file) => ({
+   alt: file.original_name || file.file_path.split('/').pop() || 'Item photo',
+   id: file.id,
+   src: await getSignedItemFileUrl(file.file_path),
+  })),
+  )
+
+  if (mounted) {
+  setImages(signedImages)
+  setActiveIndex((currentIndex) =>
+   Math.min(currentIndex, Math.max(0, signedImages.length - 1)),
+  )
+  }
+ } catch {
+  if (mounted) {
+  setFailed(true)
+  setImages([])
+  setActiveIndex(0)
+  }
+ }
+ }
+
+ void loadImages()
+
+ return () => {
+ mounted = false
+ }
+ }, [files])
+
+ function showPrevious() {
+ setActiveIndex((currentIndex) =>
+  currentIndex === 0 ? images.length - 1 : currentIndex - 1,
+ )
+ }
+
+ function showNext() {
+ setActiveIndex((currentIndex) =>
+  currentIndex === images.length - 1 ? 0 : currentIndex + 1,
+ )
+ }
+
+ if (files.length === 0 || failed || !activeImage) {
+ return (
+  <section className="grid h-[120px] place-items-center rounded-xl border border-dashed border-border-base bg-surface-2/50 text-center text-muted">
+  <div>
+   <ImageIcon className="mx-auto h-6 w-6" aria-hidden="true" />
+   <p className="mt-2 text-sm font-medium">No photos yet</p>
+  </div>
+  </section>
+ )
+ }
+
+ return (
+ <section className="relative overflow-hidden rounded-xl bg-surface-2">
+  <img
+  className="h-[180px] w-full object-cover sm:h-[240px]"
+  src={activeImage.src}
+  alt={activeImage.alt}
+  />
+  {hasMultipleImages ? (
+  <>
+   <button
+   type="button"
+   className="absolute left-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white shadow-lg transition hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-white"
+   onClick={showPrevious}
+   aria-label="Previous photo"
+   >
+   <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+   </button>
+   <button
+   type="button"
+   className="absolute right-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white shadow-lg transition hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-white"
+   onClick={showNext}
+   aria-label="Next photo"
+   >
+   <ChevronRight className="h-5 w-5" aria-hidden="true" />
+   </button>
+   <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
+   {images.map((image, index) => (
+    <button
+    key={image.id}
+    type="button"
+    className={`h-2 rounded-full transition ${
+     index === activeIndex ? 'w-5 bg-white' : 'w-2 bg-white/60 hover:bg-white/80'
+    }`}
+    onClick={() => setActiveIndex(index)}
+    aria-label={`Show photo ${index + 1}`}
+    aria-pressed={index === activeIndex}
+    />
+   ))}
+   </div>
+  </>
+  ) : null}
+ </section>
+ )
 }
 
 function DeletePanel({

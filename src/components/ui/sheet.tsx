@@ -39,7 +39,7 @@ const SheetContent = forwardRef<
  <SheetPrimitive.Content
  ref={ref}
  className={cn(
-  'fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-xl flex-col border-l border-subtle bg-card shadow-2xl outline-none transition duration-300 ease-out data-[state=closed]:translate-x-full data-[state=open]:translate-x-0 ',
+  'fixed inset-0 z-50 flex h-[100dvh] w-full flex-col bg-card shadow-2xl outline-none transition duration-200 ease-out data-[state=closed]:scale-95 data-[state=closed]:opacity-0 data-[state=open]:scale-100 data-[state=open]:opacity-100 sm:left-1/2 sm:top-1/2 sm:inset-auto sm:h-auto sm:max-h-[90vh] sm:w-[min(800px,90vw)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:border sm:border-subtle',
   className,
  )}
  {...props}

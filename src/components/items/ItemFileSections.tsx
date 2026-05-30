@@ -179,7 +179,13 @@ function PendingItemFileRow({
  )
 }
 
-export function ExistingFilesSection({ itemId }: { itemId: string }) {
+export function ExistingFilesSection({
+ itemId,
+ onImageFilesChange,
+}: {
+ itemId: string
+ onImageFilesChange?: (files: ItemFile[]) => void
+}) {
  const queryClient = useQueryClient()
  const fileInputRef = useRef<HTMLInputElement | null>(null)
  const [files, setFiles] = useState<ItemFile[]>([])
@@ -193,6 +199,10 @@ export function ExistingFilesSection({ itemId }: { itemId: string }) {
  () => files.filter((file) => file.file_type === 'image'),
  [files],
  )
+
+ useEffect(() => {
+ onImageFilesChange?.(imageFiles)
+ }, [imageFiles, onImageFilesChange])
 
  useEffect(() => {
  let mounted = true
