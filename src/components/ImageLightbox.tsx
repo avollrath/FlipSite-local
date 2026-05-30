@@ -78,11 +78,15 @@ export function ImageLightbox({
  role="dialog"
  aria-modal="true"
  aria-label="Image carousel"
- onClick={onClose}
+ onClick={(event) => {
+ if (event.target === event.currentTarget) {
+  onClose()
+ }
+ }}
  >
  <button
   type="button"
-  className="absolute right-4 top-4 rounded-lg bg-card/10 p-2 text-accent-fg transition hover:bg-card/20 focus:outline-none focus:ring-2 focus:ring-accent-fg/60"
+  className="absolute right-4 top-4 z-10 rounded-lg bg-card/10 p-2 text-accent-fg transition hover:bg-card/20 focus:outline-none focus:ring-2 focus:ring-accent-fg/60"
   onClick={(event) => {
   event.stopPropagation()
   onClose()
@@ -92,7 +96,7 @@ export function ImageLightbox({
   <X className="h-6 w-6" aria-hidden="true" />
  </button>
 
- <div className="absolute left-1/2 top-4 -translate-x-1/2 rounded-full bg-card/10 px-3 py-1 text-sm font-medium text-accent-fg/90">
+ <div className="absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-full bg-card/10 px-3 py-1 text-sm font-medium text-accent-fg/90">
   {hasImages ? `${clampedActiveIndex + 1} / ${images.length}` : 'Loading...'}
  </div>
 
@@ -100,7 +104,7 @@ export function ImageLightbox({
   <>
   <button
   type="button"
-  className="absolute left-3 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-card/10 text-accent-fg transition hover:bg-card/20 focus:outline-none focus:ring-2 focus:ring-accent-fg/60 sm:left-6"
+  className="absolute left-3 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-card/10 text-accent-fg transition hover:bg-card/20 focus:outline-none focus:ring-2 focus:ring-accent-fg/60 sm:left-6"
   onClick={(event) => {
    event.stopPropagation()
    setActiveIndex((currentIndex) => getPreviousIndex(currentIndex, images.length))
@@ -111,7 +115,7 @@ export function ImageLightbox({
   </button>
   <button
   type="button"
-  className="absolute right-3 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-card/10 text-accent-fg transition hover:bg-card/20 focus:outline-none focus:ring-2 focus:ring-accent-fg/60 sm:right-6"
+  className="absolute right-3 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-card/10 text-accent-fg transition hover:bg-card/20 focus:outline-none focus:ring-2 focus:ring-accent-fg/60 sm:right-6"
   onClick={(event) => {
    event.stopPropagation()
    setActiveIndex((currentIndex) => getNextIndex(currentIndex, images.length))
