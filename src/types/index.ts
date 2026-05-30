@@ -18,4 +18,5 @@ export type Item = {
   created_at: string
   bundle_id?: string | null
   is_bundle_parent?: boolean
+  cover_image_id?: string | null
 }

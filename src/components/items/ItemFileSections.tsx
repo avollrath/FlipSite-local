@@ -2,6 +2,7 @@ import {
  FileText,
  Image as ImageIcon,
  Loader2,
+ Star,
  Trash2,
  Upload,
 } from 'lucide-react'
@@ -180,11 +181,15 @@ function PendingItemFileRow({
 }
 
 export function ExistingFilesSection({
+ coverImageId,
  itemId,
  onImageFilesChange,
+ onSetCoverImage,
 }: {
+ coverImageId?: string | null
  itemId: string
  onImageFilesChange?: (files: ItemFile[]) => void
+ onSetCoverImage?: (fileId: string) => void
 }) {
  const queryClient = useQueryClient()
  const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -398,9 +403,12 @@ export function ExistingFilesSection({
   files.map((file) => (
   <ItemFileRow
    key={file.id}
+   canSetCover={imageFiles.length > 1}
+   isCover={file.id === coverImageId}
    file={file}
    isDeleting={deletingFileId === file.id}
    onOpen={() => handleOpenLightbox(file)}
+   onSetCover={() => onSetCoverImage?.(file.id)}
    onDelete={() => handleDelete(file)}
   />
   ))
@@ -419,15 +427,21 @@ export function ExistingFilesSection({
 }
 
 function ItemFileRow({
+ canSetCover,
  file,
+ isCover,
  isDeleting,
  onDelete,
  onOpen,
+ onSetCover,
 }: {
+ canSetCover: boolean
  file: ItemFile
+ isCover: boolean
  isDeleting: boolean
  onDelete: () => void
  onOpen: () => void
+ onSetCover: () => void
 }) {
  const isImage = file.file_type === 'image'
  const displayName = file.original_name || getFileNameFromPath(file.file_path)
@@ -457,6 +471,25 @@ function ItemFileRow({
   {file.size_bytes ? ` - ${formatFileSize(file.size_bytes)}` : ''}
   </p>
  </div>
+ {isImage && canSetCover ? (
+ <button
+  type="button"
+  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-semibold transition ${
+  isCover
+   ? 'border-accent/40 bg-accent/10 text-accent'
+   : 'border-border-base text-muted hover:border-accent/30 hover:bg-accent/5 hover:text-accent'
+  }`}
+  onClick={onSetCover}
+  aria-pressed={isCover}
+  aria-label={`Set ${displayName} as cover image`}
+ >
+  <Star
+  className={`h-3.5 w-3.5 ${isCover ? 'fill-current' : ''}`}
+  aria-hidden="true"
+  />
+  {isCover ? 'Cover' : 'Set cover'}
+ </button>
+ ) : null}
  <button
   type="button"
   className="rounded-lg p-2 text-muted transition hover:bg-negative/10 hover:text-negative disabled:cursor-not-allowed disabled:opacity-60"

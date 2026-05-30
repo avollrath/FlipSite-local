@@ -119,6 +119,7 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
  getInitialBundleChildren(item, items),
  )
  const [imageFiles, setImageFiles] = useState<ItemFile[]>([])
+ const [coverImageId, setCoverImageId] = useState(item?.cover_image_id ?? null)
 
  const categories = useMemo(
  () => uniqueTextValues(items.map((existingItem) => existingItem.category)),
@@ -167,6 +168,10 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
  updateItem.isPending ||
  isUploadingPendingFiles
  const isDeleting = deleteItem.isPending
+ const sortedImageFiles = useMemo(
+ () => sortImageFilesByCover(imageFiles, coverImageId),
+ [coverImageId, imageFiles],
+ )
  const handleImageFilesChange = useCallback((files: ItemFile[]) => {
  setImageFiles(files)
  }, [])
@@ -222,6 +227,25 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
 
  function removeBundleChild(id: string) {
  setBundleChildren((children) => children.filter((child) => child.id !== id))
+ }
+
+ async function setCoverImage(fileId: string) {
+ if (!item) {
+  return
+ }
+
+ const previousCoverImageId = coverImageId
+ setCoverImageId(fileId)
+
+ try {
+  await updateItem.mutateAsync({
+  tsid: item.tsid,
+  updates: { cover_image_id: fileId },
+  })
+  void queryClient.invalidateQueries({ queryKey: ['item-image-thumbnails'] })
+ } catch {
+  setCoverImageId(previousCoverImageId)
+ }
  }
 
  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -343,7 +367,7 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
  <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
   <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
   {mode === 'edit' && item ? (
-  <ItemImageCarousel files={imageFiles} />
+  <ItemImageCarousel files={sortedImageFiles} />
   ) : null}
   <ItemDetailsForm
    categories={categories}
@@ -403,8 +427,10 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
 
   {mode === 'edit' && item ? (
   <ExistingFilesSection
+   coverImageId={coverImageId}
    itemId={item.tsid}
    onImageFilesChange={handleImageFilesChange}
+   onSetCoverImage={setCoverImage}
   />
   ) : (
   <PendingFilesSection
@@ -625,6 +651,23 @@ function ItemImageCarousel({ files }: { files: ItemFile[] }) {
  />
  </>
  )
+}
+
+function sortImageFilesByCover(files: ItemFile[], coverImageId: string | null | undefined) {
+ if (!coverImageId) {
+ return files
+ }
+
+ const coverImage = files.find((file) => file.id === coverImageId)
+
+ if (!coverImage) {
+ return files
+ }
+
+ return [
+ coverImage,
+ ...files.filter((file) => file.id !== coverImageId),
+ ]
 }
 
 function DeletePanel({

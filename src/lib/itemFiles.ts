@@ -161,7 +161,10 @@ export async function getSignedItemFileUrl(filePath: string) {
 
 export async function getFirstItemImageThumbnails(
   itemIds: string[],
-  options: { size?: number } = {},
+  options: {
+    coverImageByItemId?: Map<string, string | null | undefined>
+    size?: number
+  } = {},
 ) {
   const user = await getAuthenticatedUser()
   const uniqueItemIds = Array.from(new Set(itemIds)).filter(Boolean)
@@ -173,7 +176,7 @@ export async function getFirstItemImageThumbnails(
 
   const { data: imageFiles, error } = await supabase
     .from('item_files')
-    .select('item_id,file_path,created_at')
+    .select('id,item_id,file_path,created_at')
     .in('item_id', uniqueItemIds)
     .eq('file_type', 'image')
     .eq('user_id', user.id)
@@ -183,7 +186,10 @@ export async function getFirstItemImageThumbnails(
     throwSafeFileError(error, 'Unable to load item thumbnails. Please try again.')
   }
 
-  const firstImageByItemId = getFirstImagePathByItemId(imageFiles ?? [])
+  const firstImageByItemId = getFirstImagePathByItemId(
+    imageFiles ?? [],
+    options.coverImageByItemId,
+  )
 
   const thumbnails = await Promise.all(
     Array.from(firstImageByItemId.entries()).map(async ([itemId, filePath]) => {

@@ -204,15 +204,27 @@ export function Items() {
         : visibleRowItemIds,
     [viewMode, visibleItems, visibleRowItemIds],
   );
+  const coverImageByItemId = useMemo(
+    () =>
+      new Map(
+        items.map((item) => [item.tsid, item.cover_image_id] as const),
+      ),
+    [items],
+  );
+  const coverImageIds = useMemo(
+    () => thumbnailItemIds.map((itemId) => coverImageByItemId.get(itemId) ?? null),
+    [coverImageByItemId, thumbnailItemIds],
+  );
   const thumbnailSize =
     viewMode === "gallery" ? galleryThumbnailSize : listThumbnailSize;
   const { data: thumbnailByItemId = new Map<string, ItemImageThumbnail>() } =
     useQuery({
-      queryKey: ["item-image-thumbnails", thumbnailSize, thumbnailItemIds],
+      queryKey: ["item-image-thumbnails", thumbnailSize, thumbnailItemIds, coverImageIds],
       enabled: thumbnailItemIds.length > 0,
       staleTime: 1000 * 60 * 30,
       queryFn: async () => {
         const thumbnails = await getFirstItemImageThumbnails(thumbnailItemIds, {
+          coverImageByItemId,
           size: thumbnailSize,
         });
 

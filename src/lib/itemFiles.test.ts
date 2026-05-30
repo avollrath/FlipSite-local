@@ -29,16 +29,19 @@ describe('item file helpers', () => {
           {
             created_at: '2026-05-01T12:00:00Z',
             file_path: 'user/item-a/newer.jpg',
+            id: 'image-a-newer',
             item_id: 'item-a',
           },
           {
             created_at: '2026-05-01T10:00:00Z',
             file_path: 'user/item-a/older.jpg',
+            id: 'image-a-older',
             item_id: 'item-a',
           },
           {
             created_at: '2026-05-01T09:00:00Z',
             file_path: 'user/item-b/only.jpg',
+            id: 'image-b-only',
             item_id: 'item-b',
           },
         ]).entries(),
@@ -47,5 +50,29 @@ describe('item file helpers', () => {
       ['item-a', 'user/item-a/newer.jpg'],
       ['item-b', 'user/item-b/only.jpg'],
     ])
+  })
+
+  it('uses the selected cover image when available', () => {
+    expect(
+      Array.from(
+        getFirstImagePathByItemId(
+          [
+            {
+              created_at: '2026-05-01T12:00:00Z',
+              file_path: 'user/item-a/newer.jpg',
+              id: 'image-a-newer',
+              item_id: 'item-a',
+            },
+            {
+              created_at: '2026-05-01T10:00:00Z',
+              file_path: 'user/item-a/older.jpg',
+              id: 'image-a-older',
+              item_id: 'item-a',
+            },
+          ],
+          new Map([['item-a', 'image-a-older']]),
+        ).entries(),
+      ),
+    ).toEqual([['item-a', 'user/item-a/older.jpg']])
   })
 })

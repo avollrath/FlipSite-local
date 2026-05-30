@@ -25,7 +25,6 @@ alter table public.items enable row level security;
 
 create index if not exists items_user_id_idx on public.items (user_id);
 create index if not exists items_bundle_id_idx on public.items (bundle_id);
-
 -- Ensure bundle children belong to the same user as their parent
 create or replace function public.check_bundle_user_match()
 returns trigger as $$
@@ -95,6 +94,11 @@ alter table public.item_files enable row level security;
 
 create index if not exists item_files_item_id_idx on public.item_files (item_id);
 create index if not exists item_files_user_id_idx on public.item_files (user_id);
+
+alter table public.items
+add column if not exists cover_image_id uuid references public.item_files (id) on delete set null;
+
+create index if not exists items_cover_image_id_idx on public.items (cover_image_id);
 
 drop policy if exists "Users can select their own files" on public.item_files;
 create policy "Users can select their own files"
