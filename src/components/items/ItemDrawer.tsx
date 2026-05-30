@@ -14,6 +14,10 @@ import {
  PendingFilesSection,
 } from '@/components/items/ItemFileSections'
 import {
+ ImageLightbox,
+ type LightboxImage,
+} from '@/components/ImageLightbox'
+import {
  BundleEditor,
  ParentBundleInfoBox,
  type BundleChildForm,
@@ -488,8 +492,13 @@ function ItemImageCarousel({ files }: { files: ItemFile[] }) {
  const [activeIndex, setActiveIndex] = useState(0)
  const [images, setImages] = useState<Array<{ alt: string; id: string; src: string }>>([])
  const [failed, setFailed] = useState(false)
+ const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
  const hasMultipleImages = images.length > 1
  const activeImage = images[activeIndex]
+ const lightboxImages: LightboxImage[] = images.map(({ alt, src }) => ({
+ alt,
+ src,
+ }))
 
  useEffect(() => {
  let mounted = true
@@ -558,12 +567,20 @@ function ItemImageCarousel({ files }: { files: ItemFile[] }) {
  }
 
  return (
+ <>
  <section className="relative overflow-hidden rounded-xl bg-surface-2">
+  <button
+  type="button"
+  className="block w-full cursor-zoom-in"
+  onClick={() => setLightboxIndex(activeIndex)}
+  aria-label={`Open ${activeImage.alt}`}
+  >
   <img
   className="h-[180px] w-full object-cover sm:h-[240px]"
   src={activeImage.src}
   alt={activeImage.alt}
   />
+  </button>
   {hasMultipleImages ? (
   <>
    <button
@@ -599,6 +616,14 @@ function ItemImageCarousel({ files }: { files: ItemFile[] }) {
   </>
   ) : null}
  </section>
+ <ImageLightbox
+  key={lightboxIndex ?? 'closed'}
+  images={lightboxImages}
+  initialIndex={lightboxIndex ?? 0}
+  open={lightboxIndex !== null}
+  onClose={() => setLightboxIndex(null)}
+ />
+ </>
  )
 }
 
