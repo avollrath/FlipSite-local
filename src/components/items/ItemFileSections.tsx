@@ -1,4 +1,5 @@
 import {
+ Download,
  FileText,
  Image as ImageIcon,
  Loader2,
@@ -200,6 +201,7 @@ export function ExistingFilesSection({
  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
  const [isUploading, setIsUploading] = useState(false)
  const [deletingFileId, setDeletingFileId] = useState<string | null>(null)
+ const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null)
  const imageFiles = useMemo(
  () => files.filter((file) => file.file_type === 'image'),
  [files],
@@ -336,6 +338,26 @@ export function ExistingFilesSection({
  }
  }
 
+ async function handleDownload(file: ItemFile) {
+ setDownloadingFileId(file.id)
+ setError('')
+
+ try {
+ const signedUrl = await getSignedItemFileUrl(file.file_path)
+ const link = document.createElement('a')
+ link.href = signedUrl
+ link.download = file.original_name || getFileNameFromPath(file.file_path)
+ link.rel = 'noopener'
+ document.body.appendChild(link)
+ link.click()
+ link.remove()
+ } catch (downloadError) {
+ setError(getErrorMessage(downloadError, 'Unable to download file'))
+ } finally {
+ setDownloadingFileId(null)
+ }
+ }
+
  function handleCloseLightbox() {
  setSelectedImageIndex(null)
  setLightboxImages([])
@@ -406,8 +428,10 @@ export function ExistingFilesSection({
    canSetCover={imageFiles.length > 1}
    isCover={file.id === coverImageId}
    file={file}
+   isDownloading={downloadingFileId === file.id}
    isDeleting={deletingFileId === file.id}
    onOpen={() => handleOpenLightbox(file)}
+   onDownload={() => handleDownload(file)}
    onSetCover={() => onSetCoverImage?.(file.id)}
    onDelete={() => handleDelete(file)}
   />
@@ -430,16 +454,20 @@ function ItemFileRow({
  canSetCover,
  file,
  isCover,
+ isDownloading,
  isDeleting,
  onDelete,
+ onDownload,
  onOpen,
  onSetCover,
 }: {
  canSetCover: boolean
  file: ItemFile
  isCover: boolean
+ isDownloading: boolean
  isDeleting: boolean
  onDelete: () => void
+ onDownload: () => void
  onOpen: () => void
  onSetCover: () => void
 }) {
@@ -488,6 +516,21 @@ function ItemFileRow({
   aria-hidden="true"
   />
   {isCover ? 'Cover' : 'Set cover'}
+ </button>
+ ) : null}
+ {!isImage ? (
+ <button
+  type="button"
+  className="rounded-lg p-2 text-muted transition hover:bg-accent/10 hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
+  onClick={onDownload}
+  disabled={isDownloading}
+  aria-label={`Download ${displayName}`}
+ >
+  {isDownloading ? (
+  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+  ) : (
+  <Download className="h-4 w-4" aria-hidden="true" />
+  )}
  </button>
  ) : null}
  <button
