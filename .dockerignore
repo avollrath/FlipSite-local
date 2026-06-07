@@ -1,0 +1,9 @@
+.git
+.env
+dist
+docs
+node_modules
+supabase
+*.log
+*.xlsx
+*.csv

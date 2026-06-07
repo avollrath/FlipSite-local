@@ -5,9 +5,9 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
 import { useDemoGuard } from '@/hooks/useDemoGuard'
 import { itemsQueryKey, useItems } from '@/hooks/useItems'
+import { apiFetch } from '@/lib/api'
 import { downloadCsv, parseCsv, toCsv, type CsvRow } from '@/lib/csv'
 import { toSupabaseTimestamp } from '@/lib/dateInput'
-import { supabase } from '@/lib/supabase'
 import { getBuyPlatform, getSellPlatform, parseMoneyInput } from '@/lib/utils'
 import { normalizeItemCondition } from '@/lib/conditions'
 import type { Item, ItemStatus } from '@/types'
@@ -139,11 +139,10 @@ export function ImportExport() {
 
  try {
  const rows = validRows.map(({ row }) => toInsertRow(row, user.id))
- const { error } = await supabase.from('items').insert(rows)
-
- if (error) {
-  throw error
- }
+ await apiFetch('/items', {
+  method: 'POST',
+  body: JSON.stringify(rows),
+ })
 
  await queryClient.invalidateQueries({ queryKey: itemsQueryKey(user.id) })
  toast.success(`${rows.length} items imported`)

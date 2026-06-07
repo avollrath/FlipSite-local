@@ -20,6 +20,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useDemoGuard } from '@/hooks/useDemoGuard'
 import { useItems } from '@/hooks/useItems'
 import { useProfile } from '@/hooks/useProfile'
+import { localAssetUrl } from '@/lib/api'
 import {
  clearSettings,
  defaultSettings,
@@ -640,5 +641,6 @@ function getAvatarUrl(avatarUrl: string | null | undefined, updatedAt: string | 
  return ''
  }
 
- return updatedAt ? `${avatarUrl}?t=${encodeURIComponent(updatedAt)}` : avatarUrl
+ const url = localAssetUrl(avatarUrl)
+ return updatedAt ? `${url}?t=${encodeURIComponent(updatedAt)}` : url
 }

@@ -102,7 +102,7 @@ function App() {
  <QueryClientProvider client={queryClient}>
  <ThemeProvider>
   <AuthProvider>
-  <BrowserRouter>
+  <BrowserRouter basename={import.meta.env.BASE_URL}>
   <Toaster richColors position="top-right" theme="system" />
   <Suspense fallback={<RouteLoader />}>
   <Routes>

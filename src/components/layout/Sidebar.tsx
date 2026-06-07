@@ -16,6 +16,7 @@ import { Logo } from '@/components/ui/Logo'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfile } from '@/hooks/useProfile'
+import { localAssetUrl } from '@/lib/api'
 
 interface SidebarProps {
  collapsed?: boolean
@@ -157,5 +158,6 @@ function getAvatarUrl(avatarUrl: string | null | undefined, updatedAt: string | 
  return ''
  }
 
- return updatedAt ? `${avatarUrl}?t=${encodeURIComponent(updatedAt)}` : avatarUrl
+ const url = localAssetUrl(avatarUrl)
+ return updatedAt ? `${url}?t=${encodeURIComponent(updatedAt)}` : url
 }

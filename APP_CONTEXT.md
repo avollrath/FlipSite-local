@@ -1,4 +1,8 @@
-# FlipSite App Context Document
+# FlipSite-local App Context Document
+
+> Current runtime: Flask API, SQLite, cookie sessions, and local filesystem
+> storage. Supabase references below describe the original repository and are
+> retained only as migration context.
 
 ## 1. App Overview
 

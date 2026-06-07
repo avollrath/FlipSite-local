@@ -346,15 +346,15 @@ export function Landing() {
 
       {/* ── Navbar ── */}
       <nav className={cn('lp-navbar', navScrolled && 'lp-navbar--scrolled')}>
-        <a href="/" className="lp-navbar__logo" aria-label="FlipSite home">FlipSite</a>
+        <a href="/flipsite/" className="lp-navbar__logo" aria-label="FlipSite home">FlipSite</a>
         <div className="lp-navbar__links hidden md:flex">
           <a href="#features">Features</a>
           <a href="#how-it-works">How it works</a>
           <a href="#demo">Demo</a>
         </div>
         <div className="flex items-center gap-4">
-          <a href="/login" className="lp-navbar__login hidden md:inline">Log in</a>
-          <a href="/login?tab=signup" className="lp-navbar__cta">Try it free</a>
+          <a href="/flipsite/login" className="lp-navbar__login hidden md:inline">Log in</a>
+          <a href="/flipsite/login?tab=signup" className="lp-navbar__cta">Try it free</a>
         </div>
       </nav>
 
@@ -372,7 +372,7 @@ export function Landing() {
             FlipSite tracks every item you flip — what you paid, what you sold it for, and what you actually walked away with. No spreadsheets. No guessing. Just the truth.
           </p>
           <div className="lp-hero__ctas hero__ctas">
-            <a href="/login?tab=signup" className="lp-btn-primary lp-gradient-bg text-white">
+            <a href="/flipsite/login?tab=signup" className="lp-btn-primary lp-gradient-bg text-white">
               Start for free
             </a>
             <a href="#demo" className="lp-btn-outline">
@@ -542,7 +542,7 @@ export function Landing() {
                   </li>
                 ))}
               </ul>
-              <a href="/login?tab=signup" className="pricing-card__cta pricing-card__cta--outline">
+              <a href="/flipsite/login?tab=signup" className="pricing-card__cta pricing-card__cta--outline">
                 Start for free
               </a>
             </div>
@@ -582,7 +582,7 @@ export function Landing() {
                   </li>
                 ))}
               </ul>
-              <a href="/login?tab=signup" className="pricing-card__cta pricing-card__cta--filled">
+              <a href="/flipsite/login?tab=signup" className="pricing-card__cta pricing-card__cta--filled">
                 Get Premium
               </a>
             </div>
@@ -608,7 +608,7 @@ export function Landing() {
               {demoLoading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
               Try the demo →
             </button>
-            <a href="/login?tab=signup" className="lp-btn-ghost">
+            <a href="/flipsite/login?tab=signup" className="lp-btn-ghost">
               Create free account
             </a>
           </div>
@@ -626,8 +626,8 @@ export function Landing() {
             Track your flips. Know your numbers. Keep more of what you make.
           </p>
           <div className="flex items-center gap-6 text-base" style={{ color: 'rgba(255,255,255,0.45)' }}>
-            <a href="/login" className="transition-colors hover:text-white">Log in</a>
-            <a href="/login?tab=signup" className="transition-colors hover:text-white">Sign up</a>
+            <a href="/flipsite/login" className="transition-colors hover:text-white">Log in</a>
+            <a href="/flipsite/login?tab=signup" className="transition-colors hover:text-white">Sign up</a>
             <a href="https://vollrath.dev" target="_blank" rel="noopener" className="transition-colors hover:text-white">vollrath.dev</a>
           </div>
         </div>

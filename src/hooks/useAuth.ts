@@ -7,12 +7,17 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { User } from '@supabase/supabase-js'
+import { apiFetch } from '@/lib/api'
 import { isDemoModeEmail } from '@/lib/demoMode'
-import { supabase } from '@/lib/supabase'
+
+export type LocalUser = {
+  id: string
+  email: string
+  created_at?: string
+}
 
 type AuthContextValue = {
-  user: User | null
+  user: LocalUser | null
   isDemoMode: boolean
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
@@ -23,36 +28,31 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<LocalUser | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let mounted = true
 
-    supabase.auth.getUser().then(({ data, error }) => {
-      if (!mounted) {
-        return
-      }
-
-      if (error) {
-        setUser(null)
-      } else {
-        setUser(data.user)
-      }
-
-      setLoading(false)
-    })
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    apiFetch<{ user: LocalUser | null }>('/auth/session')
+      .then(({ user: sessionUser }) => {
+        if (mounted) {
+          setUser(sessionUser)
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setUser(null)
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setLoading(false)
+        }
+      })
 
     return () => {
       mounted = false
-      subscription.unsubscribe()
     }
   }, [])
 
@@ -62,31 +62,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isDemoMode: isDemoModeEmail(user?.email),
       loading,
       async signIn(email, password) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+        const response = await apiFetch<{ user: LocalUser }>('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password }),
         })
-
-        if (error) {
-          throw error
-        }
+        setUser(response.user)
       },
       async signUp(email, password) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
+        const response = await apiFetch<{ user: LocalUser }>('/auth/signup', {
+          method: 'POST',
+          body: JSON.stringify({ email, password }),
         })
-
-        if (error) {
-          throw error
-        }
+        setUser(response.user)
       },
       async signOut() {
-        const { error } = await supabase.auth.signOut()
-
-        if (error) {
-          throw error
-        }
+        await apiFetch<void>('/auth/logout', { method: 'POST' })
+        setUser(null)
       },
     }),
     [loading, user],

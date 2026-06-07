@@ -25,7 +25,7 @@ export function showDemoModeToast(navigate?: (path: string) => void) {
         if (navigate) {
           navigate('/login?tab=signup')
         } else {
-          window.location.assign('/login?tab=signup')
+          window.location.assign(`${import.meta.env.BASE_URL}login?tab=signup`)
         }
       },
     },

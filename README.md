@@ -2,7 +2,9 @@
 
 **Personal inventory and resale tracker** — built for people who buy and sell things and want to know if they're actually making money.
 
-[**Live demo →**](https://flipsite-three.vercel.app/) &nbsp;·&nbsp; Demo login: `demo@flipsite.app` / `demo1234`
+This repository is the self-hosted edition of
+[FlipSite](https://github.com/avollrath/FlipSite). It runs entirely on your own
+server with SQLite and local file storage.
 
 ![FlipSite landing page](src/assets/landing.jpg)
 
@@ -71,22 +73,73 @@ Eight color themes, each working in both light and dark mode: Midnight Drop, For
 
 ## Stack
 
-React and TypeScript on the frontend, Vite for the build, Tailwind for styling. Supabase handles auth, Postgres, file storage, and row-level security — the schema includes a bundle ownership trigger that keeps profit math consistent when items are reparented. TanStack Query for data fetching, Recharts for the charts, GSAP for landing page animations, deployed on Vercel.
+React and TypeScript on the frontend, Vite for the build, Tailwind for styling,
+and a small Flask API. SQLite stores accounts, profiles, items, bundles, and
+file metadata. Attachments and avatars live on the local filesystem.
 
-## Running locally
+## Docker
 
-```bash
-npm install
-cp .env.example .env
-npm run dev
-```
+Create a `.env` file:
 
 ```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+FLIPSITE_SECRET_KEY=replace-with-a-long-random-value
+FLIPSITE_ALLOW_SIGNUP=false
 ```
 
-Create a Supabase project, enable Email/Password auth, and run `supabase/schema.sql` in the SQL editor.
+Then start the app:
+
+```bash
+docker compose up --build -d
+```
+
+The Unraid configuration stores persistent data in:
+
+```text
+/mnt/cache/appdata/flipsite/
+|-- flipsite.db
+|-- files/
+`-- avatars/
+```
+
+The application is designed to be reverse-proxied at:
+
+```text
+http://jonsbo.local/flipsite/
+```
+
+On a fresh database, the first account can sign up. Further account creation is
+disabled unless `FLIPSITE_ALLOW_SIGNUP=true`.
+
+## Supabase Migration
+
+Export these tables as JSON:
+
+```text
+items.json
+item_files.json
+profiles.json
+```
+
+Download Storage buckets under:
+
+```text
+storage/item-files/
+storage/avatars/
+```
+
+Create your local account in the browser, then run:
+
+```bash
+python backend/import_export.py \
+  --database /data/flipsite.db \
+  --export-dir /migration \
+  --files-dir /data/files \
+  --avatars-dir /data/avatars \
+  --email you@example.com
+```
+
+The importer requires an empty local account and does not accept or store your
+password.
 
 Useful checks:
 
@@ -97,10 +150,5 @@ npm run typecheck
 npm run build
 ```
 
-## Demo
-
-The live demo runs at [flipsite-three.vercel.app](https://flipsite-three.vercel.app/) with a read-only demo account:
-
-`demo@flipsite.app` / `demo1234`
 
 The demo inventory is seeded with realistic Finnish and European marketplace items — bundle examples, believable prices, local photos.

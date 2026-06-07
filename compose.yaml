@@ -1,0 +1,12 @@
+services:
+  flipsite:
+    build: .
+    container_name: flipsite
+    restart: unless-stopped
+    ports:
+      - "5001:5000"
+    environment:
+      FLIPSITE_SECRET_KEY: ${FLIPSITE_SECRET_KEY:?Set FLIPSITE_SECRET_KEY}
+      FLIPSITE_ALLOW_SIGNUP: ${FLIPSITE_ALLOW_SIGNUP:-false}
+    volumes:
+      - /mnt/cache/appdata/flipsite:/data

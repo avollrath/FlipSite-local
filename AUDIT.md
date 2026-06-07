@@ -1,5 +1,8 @@
 # FlipSite Repo Audit
 
+> Historical audit from the original Supabase edition. FlipSite-local now uses
+> Flask, SQLite, cookie sessions, and local filesystem storage.
+
 ## Executive Summary
 
 FlipSite is now a well-structured React/Supabase app with a clear product center: items, resale status, bundles, files, and profit visibility. The post-audit cleanup centralized accounting semantics, added shared item indexing, split the largest item/report surfaces, introduced route-level code splitting, and reduced the regression surface compared to the original audit state.

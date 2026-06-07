@@ -5,8 +5,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
 import { useDemoGuard } from '@/hooks/useDemoGuard'
 import { itemsQueryKey, useItems } from '@/hooks/useItems'
+import { apiFetch } from '@/lib/api'
 import { buildCategoryStats } from '@/lib/analytics'
-import { supabase } from '@/lib/supabase'
 import { formatCurrency } from '@/lib/utils'
 
 export function Categories() {
@@ -73,15 +73,10 @@ export function Categories() {
  setIsSaving(true)
 
  try {
- const { error } = await supabase
-  .from('items')
-  .update({ category: trimmedTarget })
-  .eq('user_id', user.id)
-  .eq('category', trimmedSource)
-
- if (error) {
-  throw error
- }
+ await apiFetch('/categories', {
+  method: 'PATCH',
+  body: JSON.stringify({ source: trimmedSource, target: trimmedTarget }),
+ })
 
  await refreshItems()
  toast.success('Category updated')

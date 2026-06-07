@@ -1,4 +1,7 @@
 # FlipSite Audit Report
+
+> Historical audit from the original Supabase edition. Supabase findings do
+> not describe the current FlipSite-local runtime.
 Generated: 2026-05-02
 
 ## Summary
