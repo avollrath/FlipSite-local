@@ -4,17 +4,14 @@ import {
  ChevronLeft,
  ChevronRight,
  Gauge,
- LogOut,
  Package,
  Settings,
  Tags,
 } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
-import { toast } from 'sonner'
 import flipsiteIconUrl from '@/assets/flipsite_icon.svg'
 import { Logo } from '@/components/ui/Logo'
 import { Tooltip } from '@/components/ui/Tooltip'
-import { useAuth } from '@/hooks/useAuth'
 import { useProfile } from '@/hooks/useProfile'
 import { localAssetUrl } from '@/lib/api'
 
@@ -33,21 +30,10 @@ const navItems = [
 ]
 
 export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
- const { signOut, user } = useAuth()
  const { profile } = useProfile()
  const avatarUrl = getAvatarUrl(profile?.avatar_url, profile?.updated_at)
- const displayName = profile?.username ?? user?.email?.split('@')[0] ?? 'User'
- const fallbackInitial = (displayName || user?.email || 'U')[0].toUpperCase()
-
- async function handleSignOut() {
- try {
- await signOut()
- toast.success('Signed out')
- } catch (error) {
- const message = error instanceof Error ? error.message : 'Sign out failed'
- toast.error(message)
- }
- }
+ const displayName = profile?.username ?? 'FlipSite'
+ const fallbackInitial = displayName[0].toUpperCase()
 
  return (
  <aside className={`overflow-visible fixed z-10 inset-y-0 left-0 flex-col hidden bg-sidebar md:flex transition-all duration-200 ease-out ${collapsed ? 'w-16 p-3' : 'w-72 p-5'}`}>
@@ -132,22 +118,8 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
     <p className="max-w-full text-sm font-semibold leading-tight text-center truncate text-sidebar-text">
     {displayName}
     </p>
-    <p className="max-w-full truncate text-center text-[11px] leading-tight text-sidebar-text/50">
-    {user?.email}
-    </p>
    </div>
   )}
-
-  <Tooltip content="Logout" side="right">
-   <button
-    type="button"
-    className="flex items-center justify-center w-full p-2 transition-colors rounded-lg text-sidebar-text/60 hover:text-sidebar-text/90 hover:bg-sidebar-accent/10"
-    onClick={handleSignOut}
-    aria-label="Logout"
-   >
-    <LogOut className="w-5 h-5" />
-   </button>
-  </Tooltip>
  </div>
  </aside>
  )

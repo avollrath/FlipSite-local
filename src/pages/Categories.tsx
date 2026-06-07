@@ -2,16 +2,12 @@ import { FolderPen, Merge, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
-import { useAuth } from '@/hooks/useAuth'
-import { useDemoGuard } from '@/hooks/useDemoGuard'
 import { itemsQueryKey, useItems } from '@/hooks/useItems'
 import { apiFetch } from '@/lib/api'
 import { buildCategoryStats } from '@/lib/analytics'
 import { formatCurrency } from '@/lib/utils'
 
 export function Categories() {
- const { user } = useAuth()
- const { isDemoMode, showDemoToast } = useDemoGuard()
  const queryClient = useQueryClient()
  const { data: items = [], isLoading } = useItems()
  const [search, setSearch] = useState('')
@@ -35,20 +31,10 @@ export function Categories() {
  const categoryOptions = categoryStats.map((stat) => stat.category)
 
  async function refreshItems() {
- await queryClient.invalidateQueries({ queryKey: itemsQueryKey(user?.id) })
+ await queryClient.invalidateQueries({ queryKey: itemsQueryKey('local') })
  }
 
  async function updateCategory(source: string, target: string) {
- if (!user?.id) {
- toast.error('You must be signed in to update categories')
- return
- }
-
- if (isDemoMode) {
- showDemoToast()
- return
- }
-
  const trimmedSource = source.trim()
  const trimmedTarget = target.trim()
 

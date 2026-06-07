@@ -6,8 +6,7 @@ from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
 
-from flask import Flask, jsonify, request, send_file, send_from_directory, session
-from werkzeug.security import check_password_hash, generate_password_hash
+from flask import Flask, jsonify, request, send_file, send_from_directory
 from werkzeug.utils import secure_filename
 
 
@@ -17,13 +16,11 @@ FILES_DIR = DATA_DIR / "files"
 AVATARS_DIR = DATA_DIR / "avatars"
 FRONTEND_DIR = Path(os.environ.get("FLIPSITE_FRONTEND_DIR", "/app/dist"))
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
+LOCAL_USER_ID = "local"
 
 app = Flask(__name__, static_folder=None)
-app.secret_key = os.environ.get("FLIPSITE_SECRET_KEY", "change-this-secret")
 app.config.update(
     MAX_CONTENT_LENGTH=MAX_UPLOAD_BYTES,
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE="Lax",
 )
 
 
@@ -54,15 +51,8 @@ def init_database():
     with get_db() as db:
         db.executescript(
             """
-            CREATE TABLE IF NOT EXISTS users (
-                id TEXT PRIMARY KEY,
-                email TEXT NOT NULL UNIQUE COLLATE NOCASE,
-                password_hash TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            );
-
             CREATE TABLE IF NOT EXISTS profiles (
-                id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                id TEXT PRIMARY KEY,
                 username TEXT,
                 avatar_url TEXT,
                 updated_at TEXT
@@ -70,7 +60,7 @@ def init_database():
 
             CREATE TABLE IF NOT EXISTS items (
                 tsid TEXT PRIMARY KEY,
-                user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                user_id TEXT NOT NULL,
                 name TEXT NOT NULL,
                 category TEXT NOT NULL,
                 condition TEXT NOT NULL,
@@ -94,7 +84,7 @@ def init_database():
             CREATE TABLE IF NOT EXISTS item_files (
                 id TEXT PRIMARY KEY,
                 item_id TEXT NOT NULL REFERENCES items(tsid) ON DELETE CASCADE,
-                user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                user_id TEXT NOT NULL,
                 file_path TEXT NOT NULL,
                 file_type TEXT NOT NULL CHECK (file_type IN ('image', 'file')),
                 original_name TEXT,
@@ -107,27 +97,16 @@ def init_database():
             CREATE INDEX IF NOT EXISTS item_files_user_id_idx ON item_files(user_id);
             """
         )
+        db.execute(
+            "INSERT OR IGNORE INTO profiles (id, updated_at) VALUES (?, ?)",
+            (LOCAL_USER_ID, utc_now()),
+        )
 
 
-def current_user():
-    user_id = session.get("user_id")
-    if not user_id:
-        return None
-
-    with get_db() as db:
-        return db.execute(
-            "SELECT id, email, created_at FROM users WHERE id = ?",
-            (user_id,),
-        ).fetchone()
-
-
-def require_user(handler):
+def use_local_data(handler):
     @wraps(handler)
     def wrapped(*args, **kwargs):
-        user = current_user()
-        if not user:
-            return jsonify({"error": "Authentication required"}), 401
-        return handler(user, *args, **kwargs)
+        return handler({"id": LOCAL_USER_ID}, *args, **kwargs)
 
     return wrapped
 
@@ -265,68 +244,8 @@ def health():
     return jsonify({"status": "ok"})
 
 
-@app.get("/api/auth/session")
-def auth_session():
-    user = current_user()
-    return jsonify({"user": row_to_dict(user)})
-
-
-@app.post("/api/auth/signup")
-def auth_signup():
-    payload = request.get_json(silent=True) or {}
-    email = str(payload.get("email", "")).strip().lower()
-    password = str(payload.get("password", ""))
-    if "@" not in email or len(password) < 8:
-        return jsonify({"error": "Use a valid email and password of at least 8 characters"}), 400
-
-    user_id = str(uuid.uuid4())
-    try:
-        with get_db() as db:
-            user_count = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-            allow_signup = os.environ.get("FLIPSITE_ALLOW_SIGNUP", "false").lower() == "true"
-            if user_count > 0 and not allow_signup:
-                return jsonify({"error": "Account creation is disabled"}), 403
-            db.execute(
-                "INSERT INTO users (id, email, password_hash, created_at) VALUES (?, ?, ?, ?)",
-                (user_id, email, generate_password_hash(password), utc_now()),
-            )
-            db.execute(
-                "INSERT INTO profiles (id, updated_at) VALUES (?, ?)",
-                (user_id, utc_now()),
-            )
-    except sqlite3.IntegrityError:
-        return jsonify({"error": "Account already exists"}), 409
-
-    session.clear()
-    session["user_id"] = user_id
-    return jsonify({"user": {"id": user_id, "email": email}}), 201
-
-
-@app.post("/api/auth/login")
-def auth_login():
-    payload = request.get_json(silent=True) or {}
-    email = str(payload.get("email", "")).strip().lower()
-    password = str(payload.get("password", ""))
-    with get_db() as db:
-        user = db.execute(
-            "SELECT id, email, password_hash, created_at FROM users WHERE email = ?",
-            (email,),
-        ).fetchone()
-    if not user or not check_password_hash(user["password_hash"], password):
-        return jsonify({"error": "Invalid email or password"}), 401
-    session.clear()
-    session["user_id"] = user["id"]
-    return jsonify({"user": {"id": user["id"], "email": user["email"]}})
-
-
-@app.post("/api/auth/logout")
-def auth_logout():
-    session.clear()
-    return "", 204
-
-
 @app.get("/api/items")
-@require_user
+@use_local_data
 def list_items(user):
     with get_db() as db:
         rows = db.execute(
@@ -337,7 +256,7 @@ def list_items(user):
 
 
 @app.post("/api/items")
-@require_user
+@use_local_data
 def create_items(user):
     payload = request.get_json(silent=True)
     rows = payload if isinstance(payload, list) else [payload]
@@ -353,7 +272,7 @@ def create_items(user):
 
 
 @app.post("/api/bundles")
-@require_user
+@use_local_data
 def create_bundle(user):
     payload = request.get_json(silent=True) or {}
     parent_payload = payload.get("parent")
@@ -389,7 +308,7 @@ def create_bundle(user):
 
 
 @app.patch("/api/items/<item_id>")
-@require_user
+@use_local_data
 def update_item(user, item_id):
     payload = request.get_json(silent=True) or {}
     try:
@@ -421,7 +340,7 @@ def update_item(user, item_id):
 
 
 @app.delete("/api/items/<item_id>")
-@require_user
+@use_local_data
 def delete_item(user, item_id):
     with get_db() as db:
         file_rows = db.execute(
@@ -440,7 +359,7 @@ def delete_item(user, item_id):
 
 
 @app.patch("/api/categories")
-@require_user
+@use_local_data
 def update_category(user):
     payload = request.get_json(silent=True) or {}
     source = str(payload.get("source", "")).strip()
@@ -456,7 +375,7 @@ def update_category(user):
 
 
 @app.get("/api/profile")
-@require_user
+@use_local_data
 def get_profile(user):
     with get_db() as db:
         profile = db.execute(
@@ -467,7 +386,7 @@ def get_profile(user):
 
 
 @app.put("/api/profile")
-@require_user
+@use_local_data
 def update_profile(user):
     payload = request.get_json(silent=True) or {}
     username = payload.get("username")
@@ -493,7 +412,7 @@ def update_profile(user):
 
 
 @app.post("/api/profile/avatar")
-@require_user
+@use_local_data
 def upload_avatar(user):
     uploaded = request.files.get("file")
     if not uploaded:
@@ -516,7 +435,7 @@ def serve_avatar(filename):
 
 
 @app.get("/api/items/<item_id>/files")
-@require_user
+@use_local_data
 def list_item_files(user, item_id):
     with get_db() as db:
         rows = db.execute(
@@ -531,7 +450,7 @@ def list_item_files(user, item_id):
 
 
 @app.post("/api/items/<item_id>/files")
-@require_user
+@use_local_data
 def upload_item_file(user, item_id):
     uploaded = request.files.get("file")
     if not uploaded:
@@ -581,7 +500,7 @@ def upload_item_file(user, item_id):
 
 
 @app.delete("/api/files/<file_id>")
-@require_user
+@use_local_data
 def delete_item_file(user, file_id):
     with get_db() as db:
         row = db.execute(
@@ -603,7 +522,7 @@ def delete_item_file(user, file_id):
 
 
 @app.get("/api/files/<file_id>/content")
-@require_user
+@use_local_data
 def serve_item_file(user, file_id):
     with get_db() as db:
         row = db.execute(
@@ -623,7 +542,7 @@ def serve_item_file(user, file_id):
 
 
 @app.post("/api/files/urls")
-@require_user
+@use_local_data
 def item_file_urls(user):
     payload = request.get_json(silent=True) or {}
     file_paths = payload.get("file_paths", [])
@@ -649,7 +568,7 @@ def item_file_urls(user):
 
 
 @app.post("/api/files/thumbnails")
-@require_user
+@use_local_data
 def item_thumbnails(user):
     payload = request.get_json(silent=True) or {}
     item_ids = payload.get("item_ids", [])
@@ -694,6 +613,8 @@ def frontend_index():
 
 @app.get("/<path:path>")
 def frontend_assets(path):
+    if path.startswith("api/"):
+        return jsonify({"error": "Not found"}), 404
     target = FRONTEND_DIR / path
     if target.is_file():
         return send_from_directory(FRONTEND_DIR, path)

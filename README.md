@@ -74,19 +74,12 @@ Eight color themes, each working in both light and dark mode: Midnight Drop, For
 ## Stack
 
 React and TypeScript on the frontend, Vite for the build, Tailwind for styling,
-and a small Flask API. SQLite stores accounts, profiles, items, bundles, and
+and a small Flask API. SQLite stores profiles, items, bundles, and
 file metadata. Attachments and avatars live on the local filesystem.
 
 ## Docker
 
-Create a `.env` file:
-
-```env
-FLIPSITE_SECRET_KEY=replace-with-a-long-random-value
-FLIPSITE_ALLOW_SIGNUP=false
-```
-
-Then start the app:
+Start the app:
 
 ```bash
 docker compose up --build -d
@@ -107,8 +100,8 @@ The application is designed to be reverse-proxied at:
 http://jonsbo.local/flipsite/
 ```
 
-On a fresh database, the first account can sign up. Further account creation is
-disabled unless `FLIPSITE_ALLOW_SIGNUP=true`.
+The self-hosted edition is single-user and has no login or account management.
+Only expose it on a trusted local network.
 
 ## Supabase Migration
 
@@ -127,19 +120,18 @@ storage/item-files/
 storage/avatars/
 ```
 
-Create your local account in the browser, then run:
+Run:
 
 ```bash
 python backend/import_export.py \
   --database /data/flipsite.db \
   --export-dir /migration \
   --files-dir /data/files \
-  --avatars-dir /data/avatars \
-  --email you@example.com
+  --avatars-dir /data/avatars
 ```
 
-The importer requires an empty local account and does not accept or store your
-password.
+The importer requires an empty local database. It selects the single non-demo
+user from the export, or accepts `--source-user-id` when needed.
 
 Useful checks:
 

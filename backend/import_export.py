@@ -25,7 +25,6 @@ def main():
     parser.add_argument("--export-dir", required=True, type=Path)
     parser.add_argument("--files-dir", required=True, type=Path)
     parser.add_argument("--avatars-dir", required=True, type=Path)
-    parser.add_argument("--email", required=True)
     parser.add_argument("--source-user-id")
     args = parser.parse_args()
 
@@ -36,14 +35,11 @@ def main():
 
     source_user_id = args.source_user_id
     if not source_user_id:
-        source_user = next(
-            (
-                row
-                for row in users
-                if str(row.get("email", "")).lower() == args.email.lower()
-            ),
-            None,
-        )
+        personal_users = [
+            row for row in users
+            if str(row.get("email", "")).lower() != "demo@flipsite.app"
+        ]
+        source_user = personal_users[0] if len(personal_users) == 1 else None
         if source_user:
             source_user_id = source_user["id"]
     if not source_user_id:
@@ -61,19 +57,13 @@ def main():
     imported_items = 0
     imported_files = 0
     try:
-        user = connection.execute(
-            "SELECT id FROM users WHERE email = ? COLLATE NOCASE",
-            (args.email,),
-        ).fetchone()
-        if not user:
-            raise SystemExit("Create the local account in FlipSite before importing.")
-        user_id = user[0]
+        user_id = "local"
         existing_items = connection.execute(
             "SELECT COUNT(*) FROM items WHERE user_id = ?",
             (user_id,),
         ).fetchone()[0]
         if existing_items:
-            raise SystemExit("Local account already has items; import requires an empty account.")
+            raise SystemExit("Local database already has items; import requires an empty database.")
 
         profile = next((row for row in profiles if row.get("id") == source_user_id), {})
         avatars_root = args.export_dir / "storage" / "avatars"

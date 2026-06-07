@@ -1,9 +1,7 @@
 import {
  Camera,
  Check,
- LogOut,
  MonitorCog,
- ShieldAlert,
  Type as TypeIcon,
  UserRound,
 } from 'lucide-react'
@@ -16,8 +14,6 @@ import {
 } from 'react'
 import { toast } from 'sonner'
 import { AvatarCropper } from '@/components/ui/AvatarCropper'
-import { useAuth } from '@/hooks/useAuth'
-import { useDemoGuard } from '@/hooks/useDemoGuard'
 import { useItems } from '@/hooks/useItems'
 import { useProfile } from '@/hooks/useProfile'
 import { localAssetUrl } from '@/lib/api'
@@ -46,8 +42,6 @@ import type { ItemStatus } from '@/types'
 const statuses: ItemStatus[] = ['holding', 'listed', 'sold', 'keeper']
 
 export function Settings() {
- const { signOut, user } = useAuth()
- const { isDemoMode, showDemoToast } = useDemoGuard()
  const {
  profile,
  updateProfile,
@@ -79,7 +73,7 @@ export function Settings() {
  )
  const username = draftUsername ?? profile?.username ?? ''
  const avatarUrl = getAvatarUrl(profile?.avatar_url, profile?.updated_at)
- const fallbackInitial = (username || user?.email || 'U')[0].toUpperCase()
+ const fallbackInitial = (username || 'F')[0].toUpperCase()
 
  useEffect(
  () => () => {
@@ -137,11 +131,6 @@ export function Settings() {
  }
 
  async function saveProfile() {
- if (isDemoMode) {
- showDemoToast()
- return
- }
-
  try {
  await updateProfile({ username: username.trim() || null })
  setDraftUsername(null)
@@ -157,11 +146,6 @@ export function Settings() {
  event.target.value = ''
 
  if (!file) {
- return
- }
-
- if (isDemoMode) {
- showDemoToast()
  return
  }
 
@@ -181,11 +165,6 @@ export function Settings() {
  }
 
  async function handleCropComplete(blob: Blob) {
- if (isDemoMode) {
- showDemoToast()
- return
- }
-
  try {
  await uploadAvatar(blob)
  closeCropper()
@@ -193,15 +172,6 @@ export function Settings() {
  toast.success('Avatar updated')
  } catch (error) {
  toast.error(error instanceof Error ? error.message : 'Unable to upload avatar')
- }
- }
-
- async function handleSignOut() {
- try {
- await signOut()
- toast.success('Signed out')
- } catch (error) {
- toast.error(error instanceof Error ? error.message : 'Unable to sign out')
  }
  }
 
@@ -219,8 +189,8 @@ export function Settings() {
  <div className="space-y-5">
   <Panel
   icon={UserRound}
-  title="Account"
-  description="Profile image, display name, and login details."
+  title="Profile"
+  description="Profile image and display name."
   >
   <div className="grid gap-5 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
    <div className="flex items-center gap-4 md:block md:space-y-2">
@@ -263,7 +233,7 @@ export function Settings() {
    />
    </div>
    <div className="min-w-0 space-y-4">
-   <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.75fr)]">
+   <div>
    <div className="flex flex-col gap-1.5">
     <label className="text-xs font-medium uppercase tracking-wide text-muted">
     Username
@@ -276,12 +246,6 @@ export function Settings() {
     placeholder="Your display name"
     />
    </div>
-   <div className="flex flex-col gap-1.5">
-    <label className="text-xs font-medium uppercase tracking-wide text-muted">
-    Email
-    </label>
-    <p className="truncate text-sm text-muted">{user?.email ?? ''}</p>
-   </div>
    </div>
    <div className="flex flex-wrap items-center gap-3 border-t border-subtle pt-4">
     <button
@@ -293,14 +257,6 @@ export function Settings() {
     {isProfileSaving ? 'Saving...' : 'Save'}
    </button>
     {profileSaved ? <span className="text-xs text-positive">Saved</span> : null}
-    <button
-    type="button"
-    className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-muted transition hover:bg-surface-2 hover:text-base md:ml-auto"
-    onClick={handleSignOut}
-    >
-    <LogOut className="h-3 w-3" aria-hidden="true" />
-    Sign out
-    </button>
    </div>
    </div>
   </div>
@@ -436,18 +392,6 @@ export function Settings() {
    <span className="text-xs text-positive transition-opacity">Saved</span>
   ) : null}
   </div>
- </Panel>
-
- <Panel
-  icon={ShieldAlert}
-  title="Advanced"
-  description="Low-frequency account and data safety notes."
-  subtle
- >
-  <p className="text-sm text-muted ">
-  Account deletion is intentionally not available here. Export your inventory
-  before deleting or migrating any data.
-  </p>
  </Panel>
 
  {cropImageSrc ? (

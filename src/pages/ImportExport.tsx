@@ -2,8 +2,6 @@ import { Download, FileDown, FileUp, Upload } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
-import { useAuth } from '@/hooks/useAuth'
-import { useDemoGuard } from '@/hooks/useDemoGuard'
 import { itemsQueryKey, useItems } from '@/hooks/useItems'
 import { apiFetch } from '@/lib/api'
 import { downloadCsv, parseCsv, toCsv, type CsvRow } from '@/lib/csv'
@@ -36,8 +34,6 @@ const exportFields = [
 const validStatuses: ItemStatus[] = ['holding', 'listed', 'sold', 'keeper']
 
 export function ImportExport() {
- const { user } = useAuth()
- const { isDemoMode, showDemoToast } = useDemoGuard()
  const queryClient = useQueryClient()
  const { data: items = [] } = useItems()
  const [previewRows, setPreviewRows] = useState<ImportPreviewRow[]>([])
@@ -98,12 +94,6 @@ export function ImportExport() {
  return
  }
 
- if (isDemoMode) {
- showDemoToast()
- event.target.value = ''
- return
- }
-
  try {
  const text = await file.text()
  const rows = parseCsv(text)
@@ -120,16 +110,6 @@ export function ImportExport() {
  }
 
  async function handleImport() {
- if (!user?.id) {
- toast.error('You must be signed in to import items')
- return
- }
-
- if (isDemoMode) {
- showDemoToast()
- return
- }
-
  if (hasErrors || validRows.length === 0) {
  toast.error('Fix validation errors before importing')
  return
@@ -138,13 +118,13 @@ export function ImportExport() {
  setIsImporting(true)
 
  try {
- const rows = validRows.map(({ row }) => toInsertRow(row, user.id))
+ const rows = validRows.map(({ row }) => toInsertRow(row, 'local'))
  await apiFetch('/items', {
   method: 'POST',
   body: JSON.stringify(rows),
  })
 
- await queryClient.invalidateQueries({ queryKey: itemsQueryKey(user.id) })
+ await queryClient.invalidateQueries({ queryKey: itemsQueryKey('local') })
  toast.success(`${rows.length} items imported`)
  setPreviewRows([])
  setFileName('')
@@ -170,7 +150,7 @@ export function ImportExport() {
   <Panel
   icon={FileDown}
   title="Export CSV"
-  description="Download every item in your account as a CSV backup."
+  description="Download every item as a CSV backup."
   >
   <div className="flex flex-wrap gap-3">
   <button
