@@ -75,33 +75,52 @@ Eight color themes, each working in both light and dark mode: Midnight Drop, For
 
 React and TypeScript on the frontend, Vite for the build, Tailwind for styling,
 and a small Flask API. SQLite stores profiles, items, bundles, and
-file metadata. Attachments and avatars live on the local filesystem.
+file metadata. Attachments and avatars live on the local filesystem. No cloud
+services, no accounts — everything stays on your machine.
 
-## Docker
+## Running with Docker
 
-Start the app:
+Build and start:
 
 ```bash
 docker compose up --build -d
 ```
 
-The Unraid configuration stores persistent data in:
+The app runs on port **5001** by default (`compose.yaml` maps 5001 → 5000 inside
+the container). Open `http://<your-server>:5001` in a browser.
+
+### Persistent data
+
+All data is stored in the volume mapped to `/data` inside the container. With the
+default `compose.yaml` that is:
 
 ```text
 /mnt/cache/appdata/flipsite/
-|-- flipsite.db
-|-- files/
-`-- avatars/
+├── flipsite.db       # SQLite database
+├── files/            # item attachments
+└── avatars/          # profile images
 ```
 
-The application is designed to be reverse-proxied at:
+Adjust the volume path in `compose.yaml` to match your own server layout:
 
-```text
-http://jonsbo.local/flipsite/
+```yaml
+volumes:
+  - /your/path/appdata/flipsite:/data
 ```
 
-The self-hosted edition is single-user and has no login or account management.
-Only expose it on a trusted local network.
+### Unraid
+
+The image works as a plain Docker container in Unraid's Docker manager. Set the
+host path for the `/data` volume to wherever you store appdata (e.g.
+`/mnt/cache/appdata/flipsite`), map host port 5001 to container port 5000, and
+set the restart policy to `unless-stopped`. No template file is required.
+
+To reverse-proxy through Nginx Proxy Manager or a similar tool, forward traffic
+to `http://<unraid-ip>:5001`. If you serve the app under a sub-path (e.g.
+`/flipsite/`), update `vite.config.ts` → `base` and rebuild the image.
+
+The self-hosted edition is single-user and has no login. Only expose it on a
+trusted local network.
 
 ## Supabase Migration
 
