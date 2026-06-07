@@ -16,6 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend backend
 COPY --from=frontend /app/dist dist
 
+LABEL net.unraid.docker.icon="https://raw.githubusercontent.com/avollrath/FlipSite-local/main/public/docker-icon.svg"
+
 ENV FLIPSITE_DATA_DIR=/data
 ENV FLIPSITE_FRONTEND_DIR=/app/dist
 
