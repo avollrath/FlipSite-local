@@ -1,5 +1,6 @@
 import { normalizeItemCondition } from '@/lib/conditions'
 import { parseMoneyInput } from '@/lib/utils'
+import { createClientId } from '@/lib/id'
 import { createItemIndex } from '@/domain/items/itemIndex'
 import type { ItemUpdate, NewBundleChild, NewItem } from '@/hooks/useItems'
 import type { Item } from '@/types'
@@ -40,7 +41,7 @@ export function getInitialBundleChildren(
 }
 
 export function createEmptyBundleChild(
- generateId: () => string = () => crypto.randomUUID(),
+ generateId: () => string = createClientId,
 ): BundleChildForm {
  return {
  id: generateId(),
