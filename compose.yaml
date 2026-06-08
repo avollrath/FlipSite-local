@@ -4,7 +4,7 @@ services:
     container_name: flipsite
     restart: unless-stopped
     labels:
-      net.unraid.docker.icon: https://raw.githubusercontent.com/avollrath/FlipSite-local/main/public/docker-icon.svg
+      net.unraid.docker.icon: https://raw.githubusercontent.com/avollrath/FlipSite-local/main/public/docker-icon.png
       net.unraid.docker.webui: http://[IP]/flipsite/
     ports:
       - "5001:5000"
