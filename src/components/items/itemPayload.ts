@@ -51,7 +51,7 @@ export function getInitialItemFormState({
  }
 }
 
-export function buildItemPayload(form: ItemFormState): BuildItemPayloadResult {
+export function buildItemPayload(form: ItemFormState, isBundle = false): BuildItemPayloadResult {
  const name = form.name.trim()
  const category = form.category.trim()
  const buyPriceValue = parseMoneyInput(form.buy_price)
@@ -82,7 +82,7 @@ export function buildItemPayload(form: ItemFormState): BuildItemPayloadResult {
  return { ok: false, message: 'Use date format dd/MM/yyyy for date sold' }
  }
 
- if (form.status === 'sold' && sellPriceValue === null) {
+ if (form.status === 'sold' && sellPriceValue === null && (!isBundle || form.sell_price.trim() !== '')) {
  return {
   ok: false,
   message: 'Enter a valid sell price when an item is sold',

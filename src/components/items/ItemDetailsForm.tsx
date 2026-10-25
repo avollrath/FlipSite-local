@@ -33,6 +33,7 @@ export function ItemDetailsForm({
  conditionOptions,
  form,
  hasProfitPreview,
+ isBundle,
  markAsSold,
  platforms,
  profit,
@@ -45,6 +46,7 @@ export function ItemDetailsForm({
  conditionOptions: string[]
  form: ItemFormState
  hasProfitPreview: boolean
+ isBundle: boolean
  markAsSold: () => void
  platforms: string[]
  profit: number | null
@@ -159,7 +161,7 @@ export function ItemDetailsForm({
 
  {showSellFields ? (
  <div className="grid gap-4 sm:grid-cols-2">
-  <Field label="Sell Price" required={form.status === 'sold'}>
+  <Field label="Sell Price" required={form.status === 'sold' && !isBundle}>
   <input
    ref={sellPriceInputRef}
    className={inputClassName}
@@ -170,8 +172,9 @@ export function ItemDetailsForm({
    updateField('sell_price', event.target.value)
   }
   placeholder="0,00 €"
-  required={form.status === 'sold'}
+  required={form.status === 'sold' && !isBundle}
   />
+  {isBundle ? <p className="text-xs text-muted">Optional: bundle revenue includes child item sales.</p> : null}
   </Field>
 
   <Field label="Sold on">

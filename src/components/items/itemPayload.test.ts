@@ -296,6 +296,24 @@ describe('item drawer payload helpers', () => {
  })
  })
 
+ it('allows sold bundle parents without a sell price but rejects invalid prices', () => {
+ const form = {
+  ...getInitialItemFormState({ defaults: null, item: baseItem }),
+  status: 'sold' as const,
+ }
+
+ expect(buildItemPayload(form, true)).toMatchObject({
+  ok: true,
+  payload: { status: 'sold', sell_price: null },
+ })
+ expect(buildItemPayload(form)).toMatchObject({ ok: false })
+ expect(buildItemPayload({ ...form, sell_price: 'invalid' }, true)).toMatchObject({ ok: false })
+ expect(buildItemPayload({ ...form, sell_price: '25' }, true)).toMatchObject({
+  ok: true,
+  payload: { sell_price: 25 },
+ })
+ })
+
  it('keeps sell-field visibility semantics', () => {
  expect(shouldShowSellFields('sold')).toBe(true)
  expect(shouldShowSellFields('listed')).toBe(true)

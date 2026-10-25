@@ -256,7 +256,7 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
  return
  }
 
- const payloadResult = buildItemPayload(form)
+ const payloadResult = buildItemPayload(form, isBundle)
 
  if (!payloadResult.ok) {
  toast.error(payloadResult.message)
@@ -370,6 +370,7 @@ function ItemDrawerForm({ mode, item, onEditItem, onOpenChange }: DrawerFormProp
   <ItemImageCarousel files={sortedImageFiles} />
   ) : null}
   <ItemDetailsForm
+  isBundle={isBundle}
    categories={categories}
    conditionOptions={conditionOptions}
    form={form}
